@@ -1,3 +1,8 @@
+'''
+Run this script by:
+$ nohup python util/portfolio_cex.py > /tmp/portfolio.log 2>&1 &
+$ ps aux | grep portfolio
+'''
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import WebDriverWait
@@ -9,6 +14,37 @@ import os
 import pandas as pd
 import json
 import shutil
+import time
+import pandas as pd
+import ccxt
+import influxdb_client
+import schedule
+from util.secretsmanager import get_secret
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+import traceback
+import datetime
+import time
+import os
+import pybit
+
+
+# gmocoinはccxt未対応のため、拡張クラスで対応
+# https://note.com/nickel_plating/n/nc6fb71417e7e
+from util.ccxt_extension import gmocoin
+ccxt.gmocoin = gmocoin  # add gmocoin to ccxt
+
+
+def write_influxdb(write_api, write_precision, bucket, measurement_name, fields: list, tags=None, timestamp=None):
+    point = influxdb_client.Point(measurement_name=measurement_name)
+    point.time(timestamp, write_precision)
+    for k, v in tags.items():
+        point.tag(k, v)
+    for k, v in fields.items(): 
+        point.field(k, v)
+    write_api.write(bucket=bucket, record=point)
 
 
 def create_screenshot(driver, prefix):
@@ -32,6 +68,133 @@ def create_screenshot(driver, prefix):
 
     return filepath
 
+
+##################################################################
+# CeFi
+##################################################################
+
+def fetch_price_jpyusdt():
+    # calculate jpy/usdt
+    price_btcjpy = ccxt.bitflyer().fetch_ohlcv(f'BTC/JPY', '1m')[-1][4]
+    price_btcusdt = ccxt.binance().fetch_ohlcv(f'BTC/USDT', '1m')[-1][4]
+    price_jpyusdt = price_btcusdt / price_btcjpy
+
+    return price_jpyusdt
+
+
+def fetch_market_prices(symbols: set, price_jpyusdt) -> pd.DataFrame:
+    binance = ccxt.binance()  # use exchange covering most tokens
+
+    # fetch market price for symbols
+    markets = binance.load_markets()
+
+    data = []
+    for symbol in symbols:
+        pair = f'{symbol}/USDT'
+        if pair not in markets.keys():
+            if symbol in ('USDT', 'LDUSDT'):  # LDUSDT: Lending USDT for binance
+                price_usd = 1.0
+                data.append({'symbol': symbol, 'price_usd': price_usd})
+            elif symbol == 'JPY':
+                price_usd = price_jpyusdt
+                data.append({'symbol': symbol, 'price_usd': price_usd})
+            else:
+                raise ValueError(f'pair={pair} does not exist in exchange=binance')
+        else:
+            price_usd = binance.fetch_ohlcv(f'{symbol}/USDT', '1m')[-1][4]
+            data.append({'symbol': symbol, 'price_usd': price_usd})
+
+    df_prices = pd.DataFrame.from_dict(data).astype({'symbol': str, 'price_usd': float}).sort_values('symbol')   
+    return df_prices
+
+
+def fetch_balances(exch_list: list) -> pd.DataFrame:
+    balances = {}
+
+    for exch in exch_list:
+        secrets = get_secret(f'exchange/{exch}/Bot')
+
+        if exch == 'bybit':
+            # bybit's spot account can't be fetched from ccxt
+            # https://github.com/ccxt/ccxt/blob/master/python/ccxt/bybit.py#L1490
+            from pybit import HTTP
+            session = HTTP("https://api.bybit.com",
+                        api_key=secrets['API_KEY'], api_secret=secrets['SECRET_KEY'],
+                        spot=True)
+            balance_bybit = session.get_wallet_balance()
+
+            for d in balance_bybit['result']['balances']:
+                balances[exch] = {d['coin']: d['total']}
+
+        else:
+            exchange = getattr(ccxt, exch)({
+                'enableRateLimit': True,
+                'apiKey': secrets['API_KEY'],
+                'secret': secrets['SECRET_KEY'],
+                })
+            response = exchange.fetch_balance()
+            balances[exch] = {}
+            for k, v in response['total'].items():
+                if v != 0.0:
+                    balances[exch][k] = v
+
+        # convert into dataframe
+        data = []
+        for exch, asset in balances.items():
+            for symbol, amount in asset.items():
+                data.append({'exchange': exch, 'symbol': symbol, 'amount': amount})
+
+        df_wallet = pd.DataFrame.from_dict(data) \
+            .astype({'exchange': str, 'symbol': str, 'amount': float})\
+            .sort_values(['exchange', 'symbol'])
+
+    return df_wallet
+
+
+def cefi(timestamp, price_jpyusdt, exch_list, influxdb_config):
+    df_wallet = fetch_balances(exch_list)
+
+    symbols = set(df_wallet['symbol'])
+    df_prices = fetch_market_prices(symbols, price_jpyusdt)
+
+    # df_walletに価格情報を付与
+    df = pd.merge(df_wallet, df_prices, how='left', on='symbol')
+    df['USD'] = df['amount'] * df['price_usd']
+    df['JPY'] = df['USD'] / price_jpyusdt
+    df.sort_values(['exchange', 'symbol'], inplace=True)
+
+    print('df_wallet=', df_wallet)
+    print('df_prices=', df_prices)
+    print('price_jpyusdt=', price_jpyusdt)
+    print('df=', df)
+
+    for index, row in df.iterrows():
+        tags = {
+            'location': 'cefi',
+            'exchange': row['exchange'], 
+            'symbol': row['symbol']
+            }
+        fields = {
+            'amount': float(row['amount']),
+            'USD': float(row['USD']),
+            'JPY': float(row['JPY'])
+        }
+
+        write_influxdb(
+            write_api=influxdb_config['write_api'], 
+            write_precision=influxdb_config['write_precision'], 
+            bucket='portfolio', 
+            measurement_name='portfolio', 
+            fields=fields, 
+            tags=tags, 
+            timestamp=timestamp
+            )    
+    print('wrote to InfluxDB')
+
+
+##################################################################
+# DeFi
+##################################################################
 
 def download_apeboard(driver, url):
     driver.get(url)
@@ -70,15 +233,7 @@ def download_apeboard(driver, url):
     return driver
 
 
-if __name__ == '__main__':
-    with open('./config/config.json') as f:
-        config = json.load(f)
-    
-    headless = config['headless']
-    url = config['ApeBoard_DashboardUrl']
-    os_default_download_path = config['os_default_download_path']  # default dl directory to search csv
-    chromedriver_path = config['chromedriver_path']
-
+def defi(timestamp, price_jpyusdt, url, headless, chromedriver_path, download_path, data_store_path, influxdb_config):
     # create driver
     options = Options()
     # set headless to True, if you don't need to display browser
@@ -89,7 +244,6 @@ if __name__ == '__main__':
     # Ref: https://intoli.com/blog/making-chrome-headless-undetectable/
     user_agent = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.50 Safari/537.36'
     options.add_argument(f'user-agent={user_agent}')
-    #chrome_service = fs.Service(executable_path=chromedriver_path)
     driver = webdriver.Chrome(chromedriver_path, options=options)
 
     # open browser & download
@@ -107,8 +261,8 @@ if __name__ == '__main__':
         li.append({'filename': f.name, 'timestamp': os.stat(f.path).st_mtime})
     file_timestamp_sorted = sorted(li, key=lambda x: x['timestamp'], reverse=True)
 
-    filepath_wallet = f"{os_default_download_path}/{file_timestamp_sorted[1]['filename']}"
-    filepath_position = f"{os_default_download_path}/{file_timestamp_sorted[0]['filename']}"
+    filepath_wallet = f"{os_default_download_path}/{file_timestamp_sorted[1]['filename']}"  # 2nd newest file
+    filepath_position = f"{os_default_download_path}/{file_timestamp_sorted[0]['filename']}"  # newest file
 
     df_wallet = pd.read_csv(filepath_wallet)
     df_position = pd.read_csv(filepath_position)
@@ -117,5 +271,82 @@ if __name__ == '__main__':
     print(df_position)
 
     # move downloaded files to ./data
-    shutil.move(filepath_wallet, './data')
-    shutil.move(filepath_position, './data')
+    shutil.move(filepath_wallet, data_store_path)
+    shutil.move(filepath_position, data_store_path)
+
+
+    df_wallet = None  # TODO: implement
+    df_position= None  # TODO: implement
+    '''
+    for row in df_wallet:
+        tags = {
+            'location': 'defi',
+            'exchange': row['exchange'], 
+            'symbol': row['symbol']
+            }
+        fields = {
+            'amount': float(row['amount']),
+            'USD': float(row['USD']),
+            'JPY': float(row['JPY'])
+        }
+
+        write_influxdb(
+            write_api=influxdb_config['write_api'], 
+            write_precision=influxdb_config['write_precision'], 
+            bucket='portfolio', 
+            measurement_name='portfolio', 
+            fields=fields, 
+            tags=tags, 
+            timestamp=timestamp
+            )    
+    print('wrote to InfluxDB')
+    '''
+
+if __name__ == '__main__':
+    # read parameters from config
+    with open('./config/config.json') as f:
+        config = json.load(f)
+    
+    test = config['test']
+    headless = config['headless']
+    url = config['ApeBoard_DashboardUrl']
+    os_default_download_path = config['os_default_download_path']  # default dl directory to search csv
+    chromedriver_path = config['chromedriver_path']
+    exch_list = config['exch_list']
+    data_store_path = config['data_store_path']
+    influxdb_endpoint = config['influxdb_endpoint']
+    influxdb_secret_name = config['influxdb_secret_name']
+
+    # InfluxDB
+    influxdb_secrets = get_secret(influxdb_secret_name)
+    idb_client = influxdb_client.InfluxDBClient(
+        url=influxdb_endpoint,
+        token=influxdb_secrets['token'],
+        org=influxdb_secrets['org']
+    )
+    write_api = idb_client.write_api(write_options=influxdb_client.client.write_api.SYNCHRONOUS)
+    influxdb_config = {
+        'write_api': write_api,
+        'write_precision': influxdb_client.domain.write_precision.WritePrecision.MS
+    }
+
+    def task():
+        timestamp = int(time.time() * 1000)
+        price_jpyusdt = fetch_price_jpyusdt()
+        #cefi(timestamp, price_jpyusdt, exch_list, influxdb_config)
+        defi(timestamp, price_jpyusdt, url, headless, chromedriver_path, os_default_download_path, data_store_path, influxdb_config)
+
+    schedule.every().hour.at(':00').do(task)
+
+    if test:
+        task()
+    else:
+        while True:
+            for i in range(3):  # times to retry
+                try:
+                    schedule.run_pending()
+                except:
+                    time.sleep(60)  # wait and retry
+                    pass
+
+                break  # break retry loop if task succeeded

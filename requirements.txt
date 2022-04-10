@@ -1,3 +1,7 @@
 selenium==3.141.0
 ccxt
 pandas
+influxdb_client
+schedule
+pybit
+boto3
