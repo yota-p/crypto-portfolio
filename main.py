@@ -1,7 +1,7 @@
 '''
 Run this script by:
-$ nohup python util/portfolio_cex.py > /tmp/portfolio.log 2>&1 &
-$ ps aux | grep portfolio
+$ nohup python main.py > /tmp/portfolio.log 2>&1 &
+$ ps aux | grep main.py
 '''
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
