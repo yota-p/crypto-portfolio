@@ -1,0 +1,6 @@
+{
+    "headless": false,
+    "ApeBoard_DashboardUrl": "https://apeboard.finance/dashboard/APE-YOUR_DASHBOARD_URL",
+    "os_default_download_path": "/default/download/path",
+    "chromedriver_path": "./chromedriver"
+}
