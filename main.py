@@ -177,7 +177,8 @@ def cefi(timestamp, price_jpyusdt, exch_list, influxdb_config):
         fields = {
             'amount': float(row['amount']),
             'USD': float(row['USD']),
-            'JPY': float(row['JPY'])
+            'JPY': float(row['JPY']),
+            'price': float(row['price_usd'])
         }
 
         write_influxdb(
@@ -196,7 +197,7 @@ def cefi(timestamp, price_jpyusdt, exch_list, influxdb_config):
 # DeFi
 ##################################################################
 
-def download_apeboard(driver, url):
+def download_apeboard(driver, url, os_default_download_path, data_store_path):
     driver.get(url)
     WebDriverWait(driver, 60).until(EC.presence_of_all_elements_located)
 
@@ -230,10 +231,27 @@ def download_apeboard(driver, url):
 
     time.sleep(5)  # wait for download to end
 
-    return driver
+    # move downloaded files to ./data
+    files = os.scandir(os_default_download_path)
+    li = []
+    for f in files:
+        li.append({'filename': f.name, 'timestamp': os.stat(f.path).st_mtime})
+    file_timestamp_sorted = sorted(li, key=lambda x: x['timestamp'], reverse=True)
+
+    filename_wallet = f"{file_timestamp_sorted[1]['filename']}"  # 2nd newest file
+    filename_position = f"{file_timestamp_sorted[0]['filename']}"  # newest file
+
+    # define destination filepath
+    filepath_wallet = f'{data_store_path}/{filename_wallet}'
+    filepath_position = f'{data_store_path}/{filename_position}'
+
+    shutil.move(f'{os_default_download_path}/{filename_wallet}', f'{data_store_path}/{filename_wallet}')
+    shutil.move(f'{os_default_download_path}/{filename_position}', f'{data_store_path}/{filename_position}')
+
+    return driver, filepath_wallet, filepath_position
 
 
-def defi(timestamp, price_jpyusdt, url, headless, chromedriver_path, download_path, data_store_path, influxdb_config):
+def defi(timestamp, price_jpyusdt, url, headless, chromedriver_path, os_default_download_path, data_store_path, influxdb_config):
     # create driver
     options = Options()
     # set headless to True, if you don't need to display browser
@@ -248,21 +266,12 @@ def defi(timestamp, price_jpyusdt, url, headless, chromedriver_path, download_pa
 
     # open browser & download
     try:
-        driver = download_apeboard(driver, url)
+        driver, filepath_wallet, filepath_position = download_apeboard(driver, url, os_default_download_path, data_store_path)
     except Exception:
-        filepath = create_screenshot(driver, 'error')
-        print('Failed to sync. \n' + traceback.format_exc() + f'\nScreenshot: {filepath}')
+        filepath_screenshot = create_screenshot(driver, 'error')
+        print('Failed to sync. \n' + traceback.format_exc() + f'\nScreenshot: {filepath_screenshot}')
     finally:
         driver.quit()
-
-    files = os.scandir(os_default_download_path)
-    li = []
-    for f in files:
-        li.append({'filename': f.name, 'timestamp': os.stat(f.path).st_mtime})
-    file_timestamp_sorted = sorted(li, key=lambda x: x['timestamp'], reverse=True)
-
-    filepath_wallet = f"{os_default_download_path}/{file_timestamp_sorted[1]['filename']}"  # 2nd newest file
-    filepath_position = f"{os_default_download_path}/{file_timestamp_sorted[0]['filename']}"  # newest file
 
     df_wallet = pd.read_csv(filepath_wallet)
     df_position = pd.read_csv(filepath_position)
@@ -270,26 +279,25 @@ def defi(timestamp, price_jpyusdt, url, headless, chromedriver_path, download_pa
     print(df_wallet)
     print(df_position)
 
-    # move downloaded files to ./data
-    shutil.move(filepath_wallet, data_store_path)
-    shutil.move(filepath_position, data_store_path)
+    df_wallet['JPY'] = df_wallet['value'] * price_jpyusdt
+    df_position['JPY'] = df_position['value'] * price_jpyusdt
 
-
-    df_wallet = None  # TODO: implement
-    df_position= None  # TODO: implement
-    '''
-    for row in df_wallet:
+    # write wallet data
+    for index, row in df_wallet.iterrows():
         tags = {
             'location': 'defi',
-            'exchange': row['exchange'], 
-            'symbol': row['symbol']
+            'type': 'wallet',
+            'chain': str(row['chain']),
+            'symbol': str(row['symbol'])
             }
         fields = {
-            'amount': float(row['amount']),
-            'USD': float(row['USD']),
-            'JPY': float(row['JPY'])
+            'amount': float(row['balance']),
+            'USD': float(row['value']),
+            'JPY': float(row['JPY']),
+            'price': float(row['price']),
+            'wallet_address': str(row['wallet_address']),
+            'token_address': str(row['token_address'])
         }
-
         write_influxdb(
             write_api=influxdb_config['write_api'], 
             write_precision=influxdb_config['write_precision'], 
@@ -298,9 +306,38 @@ def defi(timestamp, price_jpyusdt, url, headless, chromedriver_path, download_pa
             fields=fields, 
             tags=tags, 
             timestamp=timestamp
-            )    
+            )
+
+    # write portfolio data
+    for index, row in df_position.iterrows():
+        tags = {
+            'location': 'defi',
+            'type': 'position',
+            'chain': str(row['chain']),
+            'protocol': str(row['protocol']),
+            'symbol': str(row['symbol'])
+            }
+        fields = {
+            'amount': float(row['balance']),
+            'USD': float(row['value']),
+            'JPY': float(row['JPY']),
+            'price': float(row['price']),
+            'wallet_address': str(row['wallet_address']),
+            'position': float(row['position']),
+            'balance_type': str(row['balance_type']),
+            'asset_type': str(row['asset_type'])
+        }
+        write_influxdb(
+            write_api=influxdb_config['write_api'], 
+            write_precision=influxdb_config['write_precision'], 
+            bucket='portfolio', 
+            measurement_name='portfolio', 
+            fields=fields, 
+            tags=tags, 
+            timestamp=timestamp
+            )
     print('wrote to InfluxDB')
-    '''
+
 
 if __name__ == '__main__':
     # read parameters from config
@@ -333,7 +370,7 @@ if __name__ == '__main__':
     def task():
         timestamp = int(time.time() * 1000)
         price_jpyusdt = fetch_price_jpyusdt()
-        #cefi(timestamp, price_jpyusdt, exch_list, influxdb_config)
+        cefi(timestamp, price_jpyusdt, exch_list, influxdb_config)
         defi(timestamp, price_jpyusdt, url, headless, chromedriver_path, os_default_download_path, data_store_path, influxdb_config)
 
     schedule.every().hour.at(':00').do(task)
@@ -347,6 +384,6 @@ if __name__ == '__main__':
                     schedule.run_pending()
                 except:
                     time.sleep(60)  # wait and retry
-                    pass
+                    continue
 
-                break  # break retry loop if task succeeded
+                break  # exit retry loop if task succeeded
