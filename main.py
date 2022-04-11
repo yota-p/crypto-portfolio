@@ -1,6 +1,6 @@
 '''
-Run this script by:
-$ nohup python main.py > /tmp/portfolio.log 2>&1 &
+Run this script with:
+$ nohup python main.py >> /tmp/portfolio.log 2>&1 &
 $ ps aux | grep main.py
 '''
 from selenium import webdriver
@@ -14,26 +14,16 @@ import os
 import pandas as pd
 import json
 import shutil
-import time
-import pandas as pd
-import ccxt
-import influxdb_client
 import schedule
-from util.secretsmanager import get_secret
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-import traceback
-import datetime
-import time
-import os
+import re
+import ccxt
 import pybit
-
+import influxdb_client
+from util.secretsmanager import get_secret
+from util.ccxt_extension import gmocoin
 
 # gmocoinはccxt未対応のため、拡張クラスで対応
 # https://note.com/nickel_plating/n/nc6fb71417e7e
-from util.ccxt_extension import gmocoin
 ccxt.gmocoin = gmocoin  # add gmocoin to ccxt
 
 
@@ -117,8 +107,7 @@ def fetch_balances(exch_list: list) -> pd.DataFrame:
         if exch == 'bybit':
             # bybit's spot account can't be fetched from ccxt
             # https://github.com/ccxt/ccxt/blob/master/python/ccxt/bybit.py#L1490
-            from pybit import HTTP
-            session = HTTP("https://api.bybit.com",
+            session = pybit.HTTP("https://api.bybit.com",
                         api_key=secrets['API_KEY'], api_secret=secrets['SECRET_KEY'],
                         spot=True)
             balance_bybit = session.get_wallet_balance()
@@ -207,7 +196,7 @@ def download_apeboard(driver, url, os_default_download_path, data_store_path):
     elem = driver.find_element_by_css_selector("body > div.MuiModal-root.MuiDialog-root.e19a6ngc4.e1vojmsk6.css-cache-yky58e > div.MuiDialog-container.MuiDialog-scrollPaper.css-cache-ekeie0 > div > button")
     elem.click()
 
-    time.sleep(15)  # wait for the tokens to be loaded
+    time.sleep(30)  # wait for the tokens to be loaded
 
     # Click Export
     elem = driver.find_element_by_css_selector("#__next > div.e1tgfzqa2.MuiBox-root.css-cache-1xwgazy > div.css-cache-1kek6j4.e1tgfzqa1 > div.MuiBox-root.css-cache-0 > div.css-cache-5sgei1.e1n8hxva4 > div.css-cache-qwdzsu.e1ev28fj11 > div.e1ev28fj10.eo8e0y70.MuiBox-root.css-cache-1pzc6d0 > button")
@@ -229,13 +218,14 @@ def download_apeboard(driver, url, os_default_download_path, data_store_path):
     elem = driver.find_element_by_css_selector("body > div.MuiModal-root.MuiDialog-root.e1vojmsk6.css-cache-bm1ugi > div.MuiDialog-container.MuiDialog-scrollPaper.css-cache-ekeie0 > div > div.MuiDialogActions-root.MuiDialogActions-spacing.e1vojmsk5.css-cache-oglxqx > button")
     elem.click()
 
-    time.sleep(5)  # wait for download to end
+    time.sleep(30)  # wait for download to end
 
     # move downloaded files to ./data
     files = os.scandir(os_default_download_path)
     li = []
     for f in files:
-        li.append({'filename': f.name, 'timestamp': os.stat(f.path).st_mtime})
+        if re.search('Export.+.csv', f.name):
+            li.append({'filename': f.name, 'timestamp': os.stat(f.path).st_mtime})
     file_timestamp_sorted = sorted(li, key=lambda x: x['timestamp'], reverse=True)
 
     filename_wallet = f"{file_timestamp_sorted[1]['filename']}"  # 2nd newest file
@@ -370,8 +360,8 @@ if __name__ == '__main__':
     def task():
         timestamp = int(time.time() * 1000)
         price_jpyusdt = fetch_price_jpyusdt()
-        cefi(timestamp, price_jpyusdt, exch_list, influxdb_config)
         defi(timestamp, price_jpyusdt, url, headless, chromedriver_path, os_default_download_path, data_store_path, influxdb_config)
+        cefi(timestamp, price_jpyusdt, exch_list, influxdb_config)
 
     schedule.every().hour.at(':00').do(task)
 
