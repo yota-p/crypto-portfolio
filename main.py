@@ -279,8 +279,8 @@ def defi(timestamp, price_jpyusdt, url, headless, chromedriver_path, os_default_
     print(df_wallet)
     print(df_position)
 
-    df_wallet['JPY'] = df_wallet['value'] * price_jpyusdt
-    df_position['JPY'] = df_position['value'] * price_jpyusdt
+    df_wallet['JPY'] = df_wallet['value'] / price_jpyusdt
+    df_position['JPY'] = df_position['value'] / price_jpyusdt
 
     # write wallet data
     for index, row in df_wallet.iterrows():
@@ -382,8 +382,9 @@ if __name__ == '__main__':
             for i in range(3):  # times to retry
                 try:
                     schedule.run_pending()
-                except:
-                    time.sleep(60)  # wait and retry
-                    continue
+                except Exception:
+                    print(f'Exception at attempt {i}:\n' + traceback.format_exc())
+                finally:
+                    time.sleep(60)  # waiting is required or cpu usage will max out
 
                 break  # exit retry loop if task succeeded
