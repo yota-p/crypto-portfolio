@@ -22,14 +22,15 @@ import influxdb_client
 from util.secretsmanager import get_secret
 from util.ccxt_extension import gmocoin
 
-# gmocoinはccxt未対応のため、拡張クラスで対応
+# ccxt doesn't support gmocoin atm. use extension script from 3rd party
 # https://note.com/nickel_plating/n/nc6fb71417e7e
-ccxt.gmocoin = gmocoin  # add gmocoin to ccxt
+ccxt.gmocoin = gmocoin
 
 
-def write_influxdb(write_api, write_precision, bucket, measurement_name, fields: list, tags=None, timestamp=None):
+def write_influxdb(write_api, write_precision, bucket, measurement_name, fields: list, tags={}, timestamp:int=None):
     point = influxdb_client.Point(measurement_name=measurement_name)
-    point.time(timestamp, write_precision)
+    if timestamp:
+        point.time(timestamp, write_precision)
     for k, v in tags.items():
         point.tag(k, v)
     for k, v in fields.items(): 
@@ -146,18 +147,16 @@ def cefi(timestamp, price_jpyusdt, exch_list, influxdb_config):
     symbols = set(df_wallet['symbol'])
     df_prices = fetch_market_prices(symbols, price_jpyusdt)
 
-    # df_walletに価格情報を付与
-    df = pd.merge(df_wallet, df_prices, how='left', on='symbol')
-    df['USD'] = df['amount'] * df['price_usd']
-    df['JPY'] = df['USD'] / price_jpyusdt
-    df.sort_values(['exchange', 'symbol'], inplace=True)
+    # add price info to df
+    df_wallet = pd.merge(df_wallet, df_prices, how='left', on='symbol')
+    df_wallet['USD'] = df_wallet['amount'] * df_wallet['price_usd']
+    df_wallet['JPY'] = df_wallet['USD'] / price_jpyusdt
+    df_wallet.sort_values(['exchange', 'symbol'], inplace=True)
 
-    print('df_wallet=', df_wallet)
-    print('df_prices=', df_prices)
     print('price_jpyusdt=', price_jpyusdt)
-    print('df=', df)
+    print('df_wallet=', df_wallet)
 
-    for index, row in df.iterrows():
+    for index, row in df_wallet.iterrows():
         tags = {
             'location': 'cefi',
             'exchange': row['exchange'], 
@@ -178,7 +177,7 @@ def cefi(timestamp, price_jpyusdt, exch_list, influxdb_config):
             fields=fields, 
             tags=tags, 
             timestamp=timestamp
-            )    
+            )
     print('wrote to InfluxDB')
 
 
@@ -360,8 +359,22 @@ if __name__ == '__main__':
     def task():
         timestamp = int(time.time() * 1000)
         price_jpyusdt = fetch_price_jpyusdt()
-        defi(timestamp, price_jpyusdt, url, headless, chromedriver_path, os_default_download_path, data_store_path, influxdb_config)
-        cefi(timestamp, price_jpyusdt, exch_list, influxdb_config)
+
+        for i in range(5):  # times to retry
+            print(f'cefi attempt {i} at {timestamp}')
+            try:
+                defi(timestamp, price_jpyusdt, url, headless, chromedriver_path, os_default_download_path, data_store_path, influxdb_config)
+            except Exception:
+                print(f'Exception at attempt {i} for defi:\n' + traceback.format_exc())
+            break  # exit retry loop if task succeeded
+
+        for i in range(5):  # times to retry
+            print(f'defi attempt {i} at {timestamp}')
+            try:
+                cefi(timestamp, price_jpyusdt, exch_list, influxdb_config)
+            except Exception:
+                print(f'Exception at attempt {i} for cefi:\n' + traceback.format_exc())
+            break  # exit retry loop if task succeeded
 
     schedule.every().hour.at(':00').do(task)
 
@@ -369,12 +382,5 @@ if __name__ == '__main__':
         task()
     else:
         while True:
-            for i in range(3):  # times to retry
-                try:
-                    schedule.run_pending()
-                except Exception:
-                    print(f'Exception at attempt {i}:\n' + traceback.format_exc())
-                finally:
-                    time.sleep(60)  # waiting is required or cpu usage will max out
-
-                break  # exit retry loop if task succeeded
+            schedule.run_pending()
+            time.sleep(60)  # waiting is required or cpu usage will max out
