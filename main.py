@@ -259,6 +259,7 @@ def defi(timestamp, price_jpyusdt, url, headless, chromedriver_path, os_default_
     except Exception:
         filepath_screenshot = create_screenshot(driver, 'error')
         print('Failed to sync. \n' + traceback.format_exc() + f'\nScreenshot: {filepath_screenshot}')
+        raise Exception()
     finally:
         driver.quit()
 
