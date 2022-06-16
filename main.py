@@ -191,33 +191,33 @@ def download_apeboard(driver, url, os_default_download_path, data_store_path):
 
     time.sleep(5)  # wait for the page to be loaded
 
-    # Close "Create a Profile?" dialog
-    elem = driver.find_element_by_css_selector("body > div.MuiModal-root.MuiDialog-root.e19a6ngc4.e1vojmsk6.css-cache-yky58e > div.MuiDialog-container.MuiDialog-scrollPaper.css-cache-ekeie0 > div > button")
-    elem.click()
+    # # Close "Create a Profile?" dialog
+    # elem = driver.find_element_by_css_selector("body > div.MuiModal-root.MuiDialog-root.e19a6ngc4.e1vojmsk6.css-cache-yky58e > div.MuiDialog-container.MuiDialog-scrollPaper.css-cache-ekeie0 > div > button")
+    # elem.click()
 
     time.sleep(30)  # wait for the tokens to be loaded
 
     # Click Export
-    elem = driver.find_element_by_css_selector("#__next > div.e1tgfzqa2.MuiBox-root.css-cache-1xwgazy > div.css-cache-1kek6j4.e1tgfzqa1 > div.MuiBox-root.css-cache-0 > div.css-cache-5sgei1.e1n8hxva4 > div.css-cache-qwdzsu.e1ev28fj11 > div.e1ev28fj10.eo8e0y70.MuiBox-root.css-cache-1pzc6d0 > button")
+    elem = driver.find_element_by_css_selector("#__next > div > div.MuiBox-root.css-k008qs > div.MuiBox-root.css-95qt6b > div.MuiBox-root.css-xdk02r > div > div.MuiBox-root.css-8qb8m4 > div.css-1vqlvrt > button")
     elem.click()
 
-    # Click Download (Default selected: Wallet)
-    elem = driver.find_element_by_css_selector("body > div.MuiModal-root.MuiDialog-root.e1vojmsk6.css-cache-bm1ugi > div.MuiDialog-container.MuiDialog-scrollPaper.css-cache-ekeie0 > div > div.MuiDialogActions-root.MuiDialogActions-spacing.e1vojmsk5.css-cache-oglxqx > button")
+    # Click Download (Default selected: Wallets)
+    elem = driver.find_element_by_css_selector("body > div.MuiModal-root.MuiDialog-root.css-126xj0f > div.MuiDialog-container.MuiDialog-scrollPaper.css-ekeie0 > div > div.MuiDialogActions-root.MuiDialogActions-spacing.css-oe1mvf > button")
     elem.click()
 
-    # Click dropdown
-    elem = driver.find_element_by_css_selector("body > div.MuiModal-root.MuiDialog-root.e1vojmsk6.css-cache-bm1ugi > div.MuiDialog-container.MuiDialog-scrollPaper.css-cache-ekeie0 > div > div.MuiDialogContent-root.e1vojmsk3.css-cache-7m0knx > div.MuiBox-root.css-cache-tdpf08 > div > div > div")
+    time.sleep(2)
+
+    # Click Positions
+    elem = driver.find_element_by_css_selector("body > div.MuiModal-root.MuiDialog-root.css-126xj0f > div.MuiDialog-container.MuiDialog-scrollPaper.css-ekeie0 > div > div.MuiDialogContent-root.css-1f1qmhw > div > div > button:nth-child(2)")
     elem.click()
 
-    # Select "Positions" from dropdown
-    elem = driver.find_element_by_xpath('//*[@id="menu-"]/div[3]/ul/li[2]')
+    time.sleep(2)
+
+    # Click Download
+    elem = driver.find_element_by_css_selector("body > div.MuiModal-root.MuiDialog-root.css-126xj0f > div.MuiDialog-container.MuiDialog-scrollPaper.css-ekeie0 > div > div.MuiDialogActions-root.MuiDialogActions-spacing.css-oe1mvf > button")
     elem.click()
 
-    # Click Download (Selected: Positions)
-    elem = driver.find_element_by_css_selector("body > div.MuiModal-root.MuiDialog-root.e1vojmsk6.css-cache-bm1ugi > div.MuiDialog-container.MuiDialog-scrollPaper.css-cache-ekeie0 > div > div.MuiDialogActions-root.MuiDialogActions-spacing.e1vojmsk5.css-cache-oglxqx > button")
-    elem.click()
-
-    time.sleep(30)  # wait for download to end
+    time.sleep(2)
 
     # move downloaded files to ./data
     files = os.scandir(os_default_download_path)
@@ -266,7 +266,9 @@ def defi(timestamp, price_jpyusdt, url, headless, chromedriver_path, os_default_
     df_wallet = pd.read_csv(filepath_wallet)
     df_position = pd.read_csv(filepath_position)
 
+    print(filepath_wallet)
     print(df_wallet)
+    print(filepath_position)
     print(df_position)
 
     df_wallet['JPY'] = df_wallet['value'] / price_jpyusdt
@@ -362,7 +364,7 @@ if __name__ == '__main__':
         price_jpyusdt = fetch_price_jpyusdt()
 
         for i in range(5):  # times to retry
-            print(f'cefi attempt {i} at {timestamp}')
+            print(f'defi attempt {i} at {timestamp}')
             try:
                 defi(timestamp, price_jpyusdt, url, headless, chromedriver_path, os_default_download_path, data_store_path, influxdb_config)
             except Exception:
@@ -370,7 +372,7 @@ if __name__ == '__main__':
             break  # exit retry loop if task succeeded
 
         for i in range(5):  # times to retry
-            print(f'defi attempt {i} at {timestamp}')
+            print(f'cefi attempt {i} at {timestamp}')
             try:
                 cefi(timestamp, price_jpyusdt, exch_list, influxdb_config)
             except Exception:
