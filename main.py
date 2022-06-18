@@ -349,13 +349,12 @@ if __name__ == '__main__':
     chromedriver_path = config['chromedriver_path']
     exch_list = config['exch_list']
     data_store_path = config['data_store_path']
-    influxdb_endpoint = config['influxdb_endpoint']
     influxdb_secret_name = config['influxdb_secret_name']
 
     # InfluxDB
     influxdb_secrets = get_secret(influxdb_secret_name)
     idb_client = influxdb_client.InfluxDBClient(
-        url=influxdb_endpoint,
+        url=influxdb_secrets['endpoint'],
         token=influxdb_secrets['token'],
         org=influxdb_secrets['org']
     )

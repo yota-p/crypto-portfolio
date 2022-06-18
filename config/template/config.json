@@ -5,7 +5,6 @@
     "os_default_download_path": "/default/download/path",
     "data_store_path": "/path/to/store/data",
     "chromedriver_path": "/path/to/chromedriver",
-    "exch_list": ["gmocoin", "bitbank", "coincheck", "binance", "bybit"],
-    "influxdb_endpoint": "http://xxxx:8086",
+    "exch_list": ["gmocoin", "bitbank", "coincheck", "binance", "bybit", "ftx"],
     "influxdb_secret_name": "secretsmanger_secretname"
 }
