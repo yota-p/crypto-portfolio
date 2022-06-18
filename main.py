@@ -28,6 +28,10 @@ from util.ccxt_extension import gmocoin
 ccxt.gmocoin = gmocoin
 
 
+##################################################################
+# Helper
+##################################################################
+
 def write_influxdb(write_api, write_precision, bucket, measurement_name, fields: list, tags={}, timestamp:int=None):
     point = influxdb_client.Point(measurement_name=measurement_name)
     if timestamp:
@@ -61,10 +65,6 @@ def create_screenshot(driver, prefix):
     return filepath
 
 
-##################################################################
-# CeFi
-##################################################################
-
 def fetch_price_jpyusdt():
     # calculate jpy/usdt
     price_btcjpy = ccxt.bitflyer().fetch_ohlcv(f'BTC/JPY', '1m')[-1][4]
@@ -74,7 +74,10 @@ def fetch_price_jpyusdt():
     return price_jpyusdt
 
 
-def fetch_market_prices(symbols: set, price_jpyusdt) -> pd.DataFrame:
+##################################################################
+# CeFi
+##################################################################
+def fetch_market_prices(symbols: set) -> pd.DataFrame:
     binance = ccxt.binance()  # use exchange covering most tokens
 
     # fetch market price for symbols
@@ -85,18 +88,17 @@ def fetch_market_prices(symbols: set, price_jpyusdt) -> pd.DataFrame:
         pair = f'{symbol}/USDT'
         if pair not in markets.keys():
             if symbol in ('USDT', 'LDUSDT', 'LDBUSD'):  # LDUSDT: Lending USDT for binance
-                price_usd = 1.0
+                price_usd = 1.0  # Assuming stable coins are maintaining peg
                 data.append({'symbol': symbol, 'price_usd': price_usd})
             elif symbol == 'JPY':
-                price_usd = price_jpyusdt
-                data.append({'symbol': symbol, 'price_usd': price_usd})
+                data.append({'symbol': symbol, 'price_usd': fetch_price_jpyusdt()})
             else:
                 raise ValueError(f'pair={pair} does not exist in exchange=binance')
         else:
             price_usd = binance.fetch_ohlcv(f'{symbol}/USDT', '1m')[-1][4]
             data.append({'symbol': symbol, 'price_usd': price_usd})
 
-    df_prices = pd.DataFrame.from_dict(data).astype({'symbol': str, 'price_usd': float}).sort_values('symbol')   
+    df_prices = pd.DataFrame.from_dict(data).astype({'symbol': str, 'price_usd': float})
     return df_prices
 
 
@@ -136,28 +138,105 @@ def fetch_balances(exch_list: list) -> pd.DataFrame:
                 data.append({'exchange': exch, 'symbol': symbol, 'amount': amount})
 
         df_wallet = pd.DataFrame.from_dict(data) \
-            .astype({'exchange': str, 'symbol': str, 'amount': float})\
-            .sort_values(['exchange', 'symbol'])
+            .astype({'exchange': str, 'symbol': str, 'amount': float})
 
     return df_wallet
 
 
-def cefi(timestamp, price_jpyusdt, exch_list, influxdb_config):
+def get_cefi_portfolio(exch_list):
     df_wallet = fetch_balances(exch_list)
 
     symbols = set(df_wallet['symbol'])
-    df_prices = fetch_market_prices(symbols, price_jpyusdt)
+    df_prices = fetch_market_prices(symbols)
 
     # add price info to df
     df_wallet = pd.merge(df_wallet, df_prices, how='left', on='symbol')
     df_wallet['USD'] = df_wallet['amount'] * df_wallet['price_usd']
-    df_wallet['JPY'] = df_wallet['USD'] / price_jpyusdt
-    df_wallet.sort_values(['exchange', 'symbol'], inplace=True)
 
-    print('price_jpyusdt=', price_jpyusdt)
-    print('df_wallet=', df_wallet)
+    return df_wallet
 
-    for index, row in df_wallet.iterrows():
+
+##################################################################
+# DeFi
+##################################################################
+def fetch_apeboard(driver, url, os_default_download_path, data_store_path):
+    driver.get(url)
+    WebDriverWait(driver, 60).until(EC.presence_of_all_elements_located)
+
+    time.sleep(30)  # wait for the page to be loaded
+
+    # Click Export
+    elem = driver.find_element_by_css_selector("#__next > div > div.MuiBox-root.css-k008qs > div.MuiBox-root.css-95qt6b > div.MuiBox-root.css-xdk02r > div > div.MuiBox-root.css-8qb8m4 > div.css-1vqlvrt > button")
+    elem.click()
+
+    # Click Download (Default selected: Wallets)
+    elem = driver.find_element_by_css_selector("body > div.MuiModal-root.MuiDialog-root.css-126xj0f > div.MuiDialog-container.MuiDialog-scrollPaper.css-ekeie0 > div > div.MuiDialogActions-root.MuiDialogActions-spacing.css-oe1mvf > button")
+    elem.click()
+    time.sleep(2)
+
+    # Click Positions
+    elem = driver.find_element_by_css_selector("body > div.MuiModal-root.MuiDialog-root.css-126xj0f > div.MuiDialog-container.MuiDialog-scrollPaper.css-ekeie0 > div > div.MuiDialogContent-root.css-1f1qmhw > div > div > button:nth-child(2)")
+    elem.click()
+    time.sleep(2)
+
+    # Click Download
+    elem = driver.find_element_by_css_selector("body > div.MuiModal-root.MuiDialog-root.css-126xj0f > div.MuiDialog-container.MuiDialog-scrollPaper.css-ekeie0 > div > div.MuiDialogActions-root.MuiDialogActions-spacing.css-oe1mvf > button")
+    elem.click()
+    time.sleep(2)
+
+    # move downloaded files to ./data
+    files = os.scandir(os_default_download_path)
+    li = []
+    for f in files:
+        if re.search('Export.+.csv', f.name):
+            li.append({'filename': f.name, 'timestamp': os.stat(f.path).st_mtime})
+    file_timestamp_sorted = sorted(li, key=lambda x: x['timestamp'], reverse=True)
+
+    filename_wallet = f"{file_timestamp_sorted[1]['filename']}"  # 2nd newest file
+    filename_position = f"{file_timestamp_sorted[0]['filename']}"  # newest file
+
+    # define destination filepath
+    filepath_wallet = f'{data_store_path}/{filename_wallet}'
+    filepath_position = f'{data_store_path}/{filename_position}'
+
+    shutil.move(f'{os_default_download_path}/{filename_wallet}', f'{data_store_path}/{filename_wallet}')
+    shutil.move(f'{os_default_download_path}/{filename_position}', f'{data_store_path}/{filename_position}')
+
+    df_wallet_defi = pd.read_csv(filepath_wallet)
+    df_position_defi = pd.read_csv(filepath_position)
+
+    return driver, df_wallet_defi, df_position_defi
+
+
+def get_defi_portfolio(url, headless, chromedriver_path, os_default_download_path, data_store_path):
+    # create driver
+    options = Options()
+    # set headless to True, if you don't need to display browser
+    if headless:
+        options.add_argument('--headless')
+    # When using headless option, some websites detect this as a bot and return blank page.
+    # Thus we specify user_agent to make headless undetectable
+    # Ref: https://intoli.com/blog/making-chrome-headless-undetectable/
+    user_agent = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.50 Safari/537.36'
+    options.add_argument(f'user-agent={user_agent}')
+    driver = webdriver.Chrome(chromedriver_path, options=options)
+
+    # open browser & download
+    try:
+        driver, df_wallet, df_position = fetch_apeboard(driver, url, os_default_download_path, data_store_path)
+    except Exception:
+        filepath_screenshot = create_screenshot(driver, 'error')
+        print('Failed to sync. \n' + traceback.format_exc() + f'\nScreenshot: {filepath_screenshot}')
+        raise Exception()
+    finally:
+        driver.quit()
+
+    return df_wallet, df_position
+
+
+def write_to_influxdb(timestamp, df_wallet_defi, df_position_defi, df_wallet_cefi, influxdb_config):
+    # cefi wallet
+    for index, row in df_wallet_cefi.iterrows():
         tags = {
             'location': 'cefi',
             'exchange': row['exchange'], 
@@ -179,104 +258,9 @@ def cefi(timestamp, price_jpyusdt, exch_list, influxdb_config):
             tags=tags, 
             timestamp=timestamp
             )
-    print('wrote to InfluxDB')
 
-
-##################################################################
-# DeFi
-##################################################################
-
-def download_apeboard(driver, url, os_default_download_path, data_store_path):
-    driver.get(url)
-    WebDriverWait(driver, 60).until(EC.presence_of_all_elements_located)
-
-    time.sleep(5)  # wait for the page to be loaded
-
-    # # Close "Create a Profile?" dialog
-    # elem = driver.find_element_by_css_selector("body > div.MuiModal-root.MuiDialog-root.e19a6ngc4.e1vojmsk6.css-cache-yky58e > div.MuiDialog-container.MuiDialog-scrollPaper.css-cache-ekeie0 > div > button")
-    # elem.click()
-
-    time.sleep(60)  # wait for the tokens to be loaded
-
-    # Click Export
-    elem = driver.find_element_by_css_selector("#__next > div > div.MuiBox-root.css-k008qs > div.MuiBox-root.css-95qt6b > div.MuiBox-root.css-xdk02r > div > div.MuiBox-root.css-8qb8m4 > div.css-1vqlvrt > button")
-    elem.click()
-
-    # Click Download (Default selected: Wallets)
-    elem = driver.find_element_by_css_selector("body > div.MuiModal-root.MuiDialog-root.css-126xj0f > div.MuiDialog-container.MuiDialog-scrollPaper.css-ekeie0 > div > div.MuiDialogActions-root.MuiDialogActions-spacing.css-oe1mvf > button")
-    elem.click()
-
-    time.sleep(2)
-
-    # Click Positions
-    elem = driver.find_element_by_css_selector("body > div.MuiModal-root.MuiDialog-root.css-126xj0f > div.MuiDialog-container.MuiDialog-scrollPaper.css-ekeie0 > div > div.MuiDialogContent-root.css-1f1qmhw > div > div > button:nth-child(2)")
-    elem.click()
-
-    time.sleep(2)
-
-    # Click Download
-    elem = driver.find_element_by_css_selector("body > div.MuiModal-root.MuiDialog-root.css-126xj0f > div.MuiDialog-container.MuiDialog-scrollPaper.css-ekeie0 > div > div.MuiDialogActions-root.MuiDialogActions-spacing.css-oe1mvf > button")
-    elem.click()
-
-    time.sleep(2)
-
-    # move downloaded files to ./data
-    files = os.scandir(os_default_download_path)
-    li = []
-    for f in files:
-        if re.search('Export.+.csv', f.name):
-            li.append({'filename': f.name, 'timestamp': os.stat(f.path).st_mtime})
-    file_timestamp_sorted = sorted(li, key=lambda x: x['timestamp'], reverse=True)
-
-    filename_wallet = f"{file_timestamp_sorted[1]['filename']}"  # 2nd newest file
-    filename_position = f"{file_timestamp_sorted[0]['filename']}"  # newest file
-
-    # define destination filepath
-    filepath_wallet = f'{data_store_path}/{filename_wallet}'
-    filepath_position = f'{data_store_path}/{filename_position}'
-
-    shutil.move(f'{os_default_download_path}/{filename_wallet}', f'{data_store_path}/{filename_wallet}')
-    shutil.move(f'{os_default_download_path}/{filename_position}', f'{data_store_path}/{filename_position}')
-
-    return driver, filepath_wallet, filepath_position
-
-
-def defi(timestamp, price_jpyusdt, url, headless, chromedriver_path, os_default_download_path, data_store_path, influxdb_config):
-    # create driver
-    options = Options()
-    # set headless to True, if you don't need to display browser
-    if headless:
-        options.add_argument('--headless')
-    # When using headless option, some websites detect this as a bot and return blank page.
-    # Thus we specify user_agent to make headless undetectable
-    # Ref: https://intoli.com/blog/making-chrome-headless-undetectable/
-    user_agent = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.50 Safari/537.36'
-    options.add_argument(f'user-agent={user_agent}')
-    driver = webdriver.Chrome(chromedriver_path, options=options)
-
-    # open browser & download
-    try:
-        driver, filepath_wallet, filepath_position = download_apeboard(driver, url, os_default_download_path, data_store_path)
-    except Exception:
-        filepath_screenshot = create_screenshot(driver, 'error')
-        print('Failed to sync. \n' + traceback.format_exc() + f'\nScreenshot: {filepath_screenshot}')
-        raise Exception()
-    finally:
-        driver.quit()
-
-    df_wallet = pd.read_csv(filepath_wallet)
-    df_position = pd.read_csv(filepath_position)
-
-    print(filepath_wallet)
-    print(df_wallet)
-    print(filepath_position)
-    print(df_position)
-
-    df_wallet['JPY'] = df_wallet['value'] / price_jpyusdt
-    df_position['JPY'] = df_position['value'] / price_jpyusdt
-
-    # write wallet data
-    for index, row in df_wallet.iterrows():
+    # defi wallet
+    for index, row in df_wallet_defi.iterrows():
         tags = {
             'location': 'defi',
             'type': 'wallet',
@@ -301,8 +285,8 @@ def defi(timestamp, price_jpyusdt, url, headless, chromedriver_path, os_default_
             timestamp=timestamp
             )
 
-    # write portfolio data
-    for index, row in df_position.iterrows():
+    # defi position
+    for index, row in df_position_defi.iterrows():
         tags = {
             'location': 'defi',
             'type': 'position',
@@ -329,25 +313,49 @@ def defi(timestamp, price_jpyusdt, url, headless, chromedriver_path, os_default_
             tags=tags, 
             timestamp=timestamp
             )
-    print('wrote to InfluxDB')
+
+
+def main(exch_list, url, headless, chromedriver_path, os_default_download_path, data_store_path, influxdb_config):
+    timestamp = int(time.time() * 1000)
+
+    try:
+        # get portfolio data as dataframe
+        df_wallet_cefi = get_cefi_portfolio(exch_list)
+        df_wallet_defi, df_position_defi = get_defi_portfolio(url, headless, chromedriver_path, os_default_download_path, data_store_path)
+
+        print(df_wallet_cefi)
+        print(df_wallet_defi)
+        print(df_position_defi)
+
+        # add JPY
+        price_jpyusdt = fetch_price_jpyusdt()
+        df_wallet_cefi['JPY'] = df_wallet_cefi['USD'] / price_jpyusdt
+        df_wallet_defi['JPY'] = df_wallet_defi['value'] / price_jpyusdt
+        df_position_defi['JPY'] = df_position_defi['value'] / price_jpyusdt
+
+        # write to database
+        write_to_influxdb(timestamp, df_wallet_defi, df_position_defi, df_wallet_cefi, influxdb_config)
+        print('wrote to database')
+    except Exception:
+        print(f'Exception detected:\n' + traceback.format_exc())
 
 
 if __name__ == '__main__':
     # read argument
     parser = argparse.ArgumentParser()
-    parser.add_argument('--mode', '-m', help='Execution mode. Use now to execute immediately.', action='store', type=str, choices=['now', 'schedule'], required=True)
+    parser.add_argument('--debug', '-d', help='To repeat execution periodically or not. If false, the program will run immediately only once.', action='store_true')
     args = parser.parse_args()
-    mode = args.mode  # prd or dev
+    debug = args.debug
 
     # read parameters from config
     with open('./config/config.json') as f:
         config = json.load(f)
     
-    headless = config['headless']
+    exch_list = config['exch_list']
     url = config['ApeBoard_DashboardUrl']
+    headless = config['headless']
     os_default_download_path = config['os_default_download_path']  # default dl directory to search csv
     chromedriver_path = config['chromedriver_path']
-    exch_list = config['exch_list']
     data_store_path = config['data_store_path']
     influxdb_secret_name = config['influxdb_secret_name']
 
@@ -364,33 +372,23 @@ if __name__ == '__main__':
         'write_precision': influxdb_client.domain.write_precision.WritePrecision.MS
     }
 
-    def task():
-        timestamp = int(time.time() * 1000)
-        price_jpyusdt = fetch_price_jpyusdt()
+    kwargs = {
+        'exch_list': exch_list,
+        'url': url, 
+        'headless': headless, 
+        'chromedriver_path': chromedriver_path, 
+        'os_default_download_path': os_default_download_path, 
+        'data_store_path': data_store_path, 
+        'influxdb_config': influxdb_config
+    }
 
-        for i in range(5):  # times to retry
-            print(f'defi attempt {i} at {timestamp}')
-            try:
-                defi(timestamp, price_jpyusdt, url, headless, chromedriver_path, os_default_download_path, data_store_path, influxdb_config)
-            except Exception:
-                print(f'Exception at attempt {i} for defi:\n' + traceback.format_exc())
-            break  # exit retry loop if task succeeded
+    schedule.every().hour.at(':00').do(main, **kwargs)
+    schedule.every().hour.at(':15').do(main, **kwargs)
+    schedule.every().hour.at(':30').do(main, **kwargs)
+    schedule.every().hour.at(':45').do(main, **kwargs)
 
-        for i in range(5):  # times to retry
-            print(f'cefi attempt {i} at {timestamp}')
-            try:
-                cefi(timestamp, price_jpyusdt, exch_list, influxdb_config)
-            except Exception:
-                print(f'Exception at attempt {i} for cefi:\n' + traceback.format_exc())
-            break  # exit retry loop if task succeeded
-
-    schedule.every().hour.at(':00').do(task)
-    schedule.every().hour.at(':15').do(task)
-    schedule.every().hour.at(':30').do(task)
-    schedule.every().hour.at(':45').do(task)
-
-    if mode == 'now':
-        task()
+    if debug:
+        main(**kwargs)
     else:
         while True:
             schedule.run_pending()
