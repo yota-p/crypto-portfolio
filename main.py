@@ -83,7 +83,7 @@ def fetch_market_prices(symbols: set, price_jpyusdt) -> pd.DataFrame:
     for symbol in symbols:
         pair = f'{symbol}/USDT'
         if pair not in markets.keys():
-            if symbol in ('USDT', 'LDUSDT'):  # LDUSDT: Lending USDT for binance
+            if symbol in ('USDT', 'LDUSDT', 'LDBUSD'):  # LDUSDT: Lending USDT for binance
                 price_usd = 1.0
                 data.append({'symbol': symbol, 'price_usd': price_usd})
             elif symbol == 'JPY':
@@ -195,7 +195,7 @@ def download_apeboard(driver, url, os_default_download_path, data_store_path):
     # elem = driver.find_element_by_css_selector("body > div.MuiModal-root.MuiDialog-root.e19a6ngc4.e1vojmsk6.css-cache-yky58e > div.MuiDialog-container.MuiDialog-scrollPaper.css-cache-ekeie0 > div > button")
     # elem.click()
 
-    time.sleep(30)  # wait for the tokens to be loaded
+    time.sleep(60)  # wait for the tokens to be loaded
 
     # Click Export
     elem = driver.find_element_by_css_selector("#__next > div > div.MuiBox-root.css-k008qs > div.MuiBox-root.css-95qt6b > div.MuiBox-root.css-xdk02r > div > div.MuiBox-root.css-8qb8m4 > div.css-1vqlvrt > button")
@@ -379,7 +379,7 @@ if __name__ == '__main__':
                 print(f'Exception at attempt {i} for cefi:\n' + traceback.format_exc())
             break  # exit retry loop if task succeeded
 
-    schedule.every().hour.at(':00').do(task)
+    schedule.every().hour.at(':00').at(':15').at(':30').at(':45').do(task)
 
     if test:
         task()
