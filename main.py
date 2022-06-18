@@ -11,6 +11,7 @@ import traceback
 import datetime
 import time
 import os
+import argparse
 import pandas as pd
 import json
 import shutil
@@ -332,11 +333,16 @@ def defi(timestamp, price_jpyusdt, url, headless, chromedriver_path, os_default_
 
 
 if __name__ == '__main__':
+    # read argument
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--mode', '-m', help='Execution mode. Use now to execute immediately.', action='store', type=str, choices=['now', 'schedule'], required=True)
+    args = parser.parse_args()
+    mode = args.mode  # prd or dev
+
     # read parameters from config
     with open('./config/config.json') as f:
         config = json.load(f)
     
-    test = config['test']
     headless = config['headless']
     url = config['ApeBoard_DashboardUrl']
     os_default_download_path = config['os_default_download_path']  # default dl directory to search csv
@@ -379,9 +385,12 @@ if __name__ == '__main__':
                 print(f'Exception at attempt {i} for cefi:\n' + traceback.format_exc())
             break  # exit retry loop if task succeeded
 
-    schedule.every().hour.at(':00').at(':15').at(':30').at(':45').do(task)
+    schedule.every().hour.at(':00').do(task)
+    schedule.every().hour.at(':15').do(task)
+    schedule.every().hour.at(':30').do(task)
+    schedule.every().hour.at(':45').do(task)
 
-    if test:
+    if mode == 'now':
         task()
     else:
         while True:
