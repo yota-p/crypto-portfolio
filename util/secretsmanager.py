@@ -56,7 +56,5 @@ def get_secret(secret_name, region_name="ap-northeast-1"):
             return decoded_binary_secret
             
 if __name__ == '__main__':
-    secret_name = "exchange/binance/Bot"
-    secret = get_secret(secret_name)  # returns dict
-    print('API_KEY', secret['API_KEY'])
-    print('SECRET_KEY', secret['SECRET_KEY'])
+    secret = get_secret(f'exchange/bot')
+    print (json.dumps(secret))

@@ -103,13 +103,13 @@ def fetch_balances(exch_list: list) -> pd.DataFrame:
     balances = {}
 
     for exch in exch_list:
-        secrets = get_secret(f'exchange/{exch}/Bot')
+        secrets = get_secret(f'exchange/bot')
 
         if exch == 'bybit':
             # bybit's spot account can't be fetched from ccxt
             # https://github.com/ccxt/ccxt/blob/master/python/ccxt/bybit.py#L1490
             session = pybit.HTTP("https://api.bybit.com",
-                        api_key=secrets['API_KEY'], api_secret=secrets['SECRET_KEY'],
+                        api_key=secrets[exch]['API_KEY'], api_secret=secrets[exch]['SECRET_KEY'],
                         spot=True)
             balance_bybit = session.get_wallet_balance()
 
@@ -119,8 +119,8 @@ def fetch_balances(exch_list: list) -> pd.DataFrame:
         else:
             exchange = getattr(ccxt, exch)({
                 'enableRateLimit': True,
-                'apiKey': secrets['API_KEY'],
-                'secret': secrets['SECRET_KEY'],
+                'apiKey': secrets[exch]['API_KEY'],
+                'secret': secrets[exch]['SECRET_KEY'],
                 })
             response = exchange.fetch_balance()
             balances[exch] = {}
@@ -386,4 +386,4 @@ if __name__ == '__main__':
     else:
         while True:
             schedule.run_pending()
-            time.sleep(60)  # waiting is required or cpu usage will max out
+            time.sleep(10)  # sleep is required or cpu usage will max out
