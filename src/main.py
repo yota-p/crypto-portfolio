@@ -214,6 +214,10 @@ def get_defi_portfolio(url, headless, chromedriver_path, os_default_download_pat
     # set headless to True, if you don't need to display browser
     if headless:
         options.add_argument('--headless')
+
+    options.add_argument('--no-sandbox')  # for preventing crashes
+    options.add_argument('--window-size=800,600')  # for preventing crashes
+
     # When using headless option, some websites detect this as a bot and return blank page.
     # Thus we specify user_agent to make headless undetectable
     # Ref: https://intoli.com/blog/making-chrome-headless-undetectable/

@@ -1,9 +1,24 @@
 # crypto-portfolio
 
-This is a software to collect balance from CeFi/DeFi wallets and write to InfluxDB. Currently only available for spot wallets. 
+This is a bot to collect balance from CeFi/DeFi wallets and write to InfluxDB. Currently only available for spot wallets. Below is example of the dashboard:
+
+![Grafana Dashboard 1](image/grafana-dashboard-1.png)
+![Grafana Dashboard 2](image/grafana-dashboard-2.png)
+
+## Architecture
+
+- Execution: EC2 (Amazon Linux)
+- Datastore: InfluxDB on EC2
+- Visualization: Amazon Managed Grafana or Grafana on EC2
+- Log: CloudWatch Logs
+- Monitoring: CloudWatch Logs subscription filter -> AWS Lambda -> Slack
+- Secret store: Amazon Secrets Manager
 
 ## Requirements
 
+- AWS Account
+- Access permission to CloudWatch Logs, Secrets Manager
+- Store connection secrets for Influxdb, crypto exchanges
 - Create a InfluxDB server
 - Create a Grafana server connected to InfluxDB
 - Create a ApeBoard portfolio URL
@@ -84,5 +99,3 @@ ps aux | grep chrome | grep -v grep | awk '{ print "kill -9", $2 }' | sh
 ```
 
 Note that `driver.close()` only closes current window. Use `driver.quit()` to close Chromedriver handling multiple window.
-
-Logs will be sent to CloudWatch Logs. 
