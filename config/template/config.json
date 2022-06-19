@@ -1,10 +1,10 @@
 {
-    "test": true,
+    "exch_list": ["gmocoin", "bitbank", "coincheck", "binance", "bybit", "ftx"],
+    "exchange_secret_name": "secretsmanger_secretname",
+    "chromedriver_path": "/path/to/chromedriver",
     "headless": true,
     "ApeBoard_DashboardUrl": "https://apeboard.finance/dashboard/APE-YOUR_DASHBOARD_URL",
     "os_default_download_path": "/default/download/path",
     "data_store_path": "/path/to/store/data",
-    "chromedriver_path": "/path/to/chromedriver",
-    "exch_list": ["gmocoin", "bitbank", "coincheck", "binance", "bybit", "ftx"],
     "influxdb_secret_name": "secretsmanger_secretname"
 }

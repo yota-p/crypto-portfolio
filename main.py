@@ -102,12 +102,10 @@ def fetch_market_prices(symbols: set) -> pd.DataFrame:
     return df_prices
 
 
-def fetch_balances(exch_list: list) -> pd.DataFrame:
+def fetch_balances(exch_list: list, secrets) -> pd.DataFrame:
     balances = {}
 
     for exch in exch_list:
-        secrets = get_secret(f'exchange/bot')
-
         if exch == 'bybit':
             # bybit's spot account can't be fetched from ccxt
             # https://github.com/ccxt/ccxt/blob/master/python/ccxt/bybit.py#L1490
@@ -143,8 +141,8 @@ def fetch_balances(exch_list: list) -> pd.DataFrame:
     return df_wallet
 
 
-def get_cefi_portfolio(exch_list):
-    df_wallet = fetch_balances(exch_list)
+def get_cefi_portfolio(exch_list, exch_secrets):
+    df_wallet = fetch_balances(exch_list, exch_secrets)
 
     symbols = set(df_wallet['symbol'])
     df_prices = fetch_market_prices(symbols)
@@ -315,12 +313,12 @@ def write_to_influxdb(timestamp, df_wallet_defi, df_position_defi, df_wallet_cef
             )
 
 
-def main(exch_list, url, headless, chromedriver_path, os_default_download_path, data_store_path, influxdb_config):
+def main(exch_list, exch_secrets, url, headless, chromedriver_path, os_default_download_path, data_store_path, influxdb_config):
     timestamp = int(time.time() * 1000)
 
     try:
         # get portfolio data as dataframe
-        df_wallet_cefi = get_cefi_portfolio(exch_list)
+        df_wallet_cefi = get_cefi_portfolio(exch_list, exch_secrets)
         df_wallet_defi, df_position_defi = get_defi_portfolio(url, headless, chromedriver_path, os_default_download_path, data_store_path)
 
         print(df_wallet_cefi)
@@ -358,6 +356,9 @@ if __name__ == '__main__':
     chromedriver_path = config['chromedriver_path']
     data_store_path = config['data_store_path']
     influxdb_secret_name = config['influxdb_secret_name']
+    exchange_secret_name = config['exchange_secret_name']
+
+    exch_secrets = get_secret(exchange_secret_name)
 
     # InfluxDB
     influxdb_secrets = get_secret(influxdb_secret_name)
@@ -374,6 +375,7 @@ if __name__ == '__main__':
 
     kwargs = {
         'exch_list': exch_list,
+        'exch_secrets': exch_secrets,
         'url': url, 
         'headless': headless, 
         'chromedriver_path': chromedriver_path, 
