@@ -1,19 +1,18 @@
-'''
-Run this script with:
-$ nohup python main.py >> /tmp/portfolio.log 2>&1 &
-$ ps aux | grep main.py
-'''
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import traceback
 import datetime
+from dateutil import tz
 import time
 import os
 import argparse
 import pandas as pd
+import socket
+import pathlib
 import json
+from logging import getLogger
 import shutil
 import schedule
 import re
@@ -21,6 +20,7 @@ import ccxt
 import pybit
 import influxdb_client
 from util.secretsmanager import get_secret
+from util.mylog import create_logger
 from util.ccxt_extension import gmocoin
 
 # ccxt doesn't support gmocoin atm. use extension script from 3rd party
@@ -207,6 +207,8 @@ def fetch_apeboard(driver, url, os_default_download_path, data_store_path):
 
 
 def get_defi_portfolio(url, headless, chromedriver_path, os_default_download_path, data_store_path):
+    logger = getLogger('main')
+
     # create driver
     options = Options()
     # set headless to True, if you don't need to display browser
@@ -224,7 +226,7 @@ def get_defi_portfolio(url, headless, chromedriver_path, os_default_download_pat
         driver, df_wallet, df_position = fetch_apeboard(driver, url, os_default_download_path, data_store_path)
     except Exception:
         filepath_screenshot = create_screenshot(driver, 'error')
-        print('Failed to sync. \n' + traceback.format_exc() + f'\nScreenshot: {filepath_screenshot}')
+        logger.error('failed to fetch_apeboard. \n' + traceback.format_exc() + f'\nScreenshot: {filepath_screenshot}')
         raise Exception()
     finally:
         driver.quit()
@@ -316,14 +318,17 @@ def write_to_influxdb(timestamp, df_wallet_defi, df_position_defi, df_wallet_cef
 def main(exch_list, exch_secrets, url, headless, chromedriver_path, os_default_download_path, data_store_path, influxdb_config):
     timestamp = int(time.time() * 1000)
 
+    logger = getLogger('main')
+    logger.info(f'iteration at timestamp={timestamp}')
+
     try:
         # get portfolio data as dataframe
         df_wallet_cefi = get_cefi_portfolio(exch_list, exch_secrets)
         df_wallet_defi, df_position_defi = get_defi_portfolio(url, headless, chromedriver_path, os_default_download_path, data_store_path)
 
-        print(df_wallet_cefi)
-        print(df_wallet_defi)
-        print(df_position_defi)
+        # print(df_wallet_cefi)
+        # print(df_wallet_defi)
+        # print(df_position_defi)
 
         # add JPY
         price_jpyusdt = fetch_price_jpyusdt()
@@ -333,9 +338,9 @@ def main(exch_list, exch_secrets, url, headless, chromedriver_path, os_default_d
 
         # write to database
         write_to_influxdb(timestamp, df_wallet_defi, df_position_defi, df_wallet_cefi, influxdb_config)
-        print('wrote to database')
+        logger.info('wrote to database')
     except Exception:
-        print(f'Exception detected:\n' + traceback.format_exc())
+        logger.critical(f'caught Exception on iteration at timestamp={timestamp}')
 
 
 if __name__ == '__main__':
@@ -346,7 +351,7 @@ if __name__ == '__main__':
     debug = args.debug
 
     # read parameters from config
-    with open('./config/config.json') as f:
+    with open('../config/config.json') as f:
         config = json.load(f)
     
     exch_list = config['exch_list']
@@ -359,6 +364,26 @@ if __name__ == '__main__':
     exchange_secret_name = config['exchange_secret_name']
 
     exch_secrets = get_secret(exchange_secret_name)
+
+    # Execution parameter
+    exec_name = datetime.datetime.now(tz.gettz('UTC')).strftime('%Y%m%d-%H%M%S')  # YYYYMMDD-HHMMSS
+    env = 'dev' if debug else 'prd'
+    BASE_OUT_DIR = f'../data/{env}/{exec_name}' # File output dir
+    pathlib.Path(BASE_OUT_DIR).mkdir(exist_ok=True, parents=True)
+
+    # Logger
+    # for cloudwatch
+    hostname = socket.gethostname()
+    file_name = pathlib.Path(__file__).stem
+    log_group_name = f'crypto-portfolio/{env}'
+    log_stream_name = f'{hostname}/{file_name}/{exec_name}'
+
+    logger = create_logger(
+        name='main',
+        cloudwatchconfig={'log_group_name': log_group_name, 'log_stream_name': log_stream_name, 'region_name': 'us-east-2'},
+        logrecord_constants={'hostname': hostname, 'env': env, 'exec_name': exec_name}
+        )
+    logger.info('created logger')
 
     # InfluxDB
     influxdb_secrets = get_secret(influxdb_secret_name)
@@ -391,6 +416,7 @@ if __name__ == '__main__':
 
     if debug:
         main(**kwargs)
+        logger.info('finished debug run')
     else:
         while True:
             schedule.run_pending()

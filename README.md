@@ -66,10 +66,13 @@ To run only once, execute below. The program will run immediately.
 python main.py --debug
 ```
 
-To run periodically, execute below in tmux or nohup. Execution is scheduled at every 15min.
+To run periodically, execute below in nohup (or tmux). Execution is scheduled at every 15min.
 
 ```bash
-python main.py
+nohup python main.py > /dev/null &
+
+# check process
+ps aux | grep main.py
 ```
 
 ## Tips
@@ -81,3 +84,5 @@ ps aux | grep chrome | grep -v grep | awk '{ print "kill -9", $2 }' | sh
 ```
 
 Note that `driver.close()` only closes current window. Use `driver.quit()` to close Chromedriver handling multiple window.
+
+Logs will be sent to CloudWatch Logs. 

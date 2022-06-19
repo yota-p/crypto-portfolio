@@ -87,7 +87,8 @@ def create_logger(
     stream_handler_level=DEBUG,
     file_handler_level=DEBUG,
     slack_handler_level=ERROR,
-    cloudwatch_handler_level=DEBUG
+    cloudwatch_handler_level=DEBUG,
+    logrecord_constants={}  # constant value to add to logrecords
     ):
     '''
     This is a method to initialize logger for specified name.
@@ -110,8 +111,12 @@ def create_logger(
     old_factory = getLogRecordFactory()
     def new_record_factory(*args, **kwargs):
         record = old_factory(*args, **kwargs)
-        record.hostname = socket.gethostname()
-        record.execname = datetime.datetime.now(tz.gettz('UTC')).strftime('%Y%m%d-%H%M%S')
+
+        for k, v in logrecord_constants.items():
+            setattr(record, k, v)
+            # equivalent to 
+            # record.hostname = 'host1'
+            # record.execname = '20220101-123456'
 
         return record
 
@@ -227,7 +232,8 @@ if __name__ == '__main__':
         'mylog',
         filepath='/tmp/mylog.log', 
         slackauth=slackauth, 
-        cloudwatchconfig={'log_group_name': log_group_name, 'log_stream_name': log_stream_name, 'region_name': 'us-east-2'}
+        cloudwatchconfig={'log_group_name': log_group_name, 'log_stream_name': log_stream_name, 'region_name': 'us-east-2'},
+        logrecord_constants={'test1': 1, 'test2': 'aaa'}
         )
 
     logger.debug(msg='Hello DEBUG')
