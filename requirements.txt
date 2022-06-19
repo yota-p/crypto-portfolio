@@ -5,3 +5,6 @@ influxdb_client
 schedule
 pybit
 boto3
+slack_sdk
+watchtower
+JSON-log-formatter

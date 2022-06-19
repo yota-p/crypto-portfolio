@@ -7,7 +7,7 @@ This is a software to collect balance from CeFi/DeFi wallets and write to Influx
 - Create a InfluxDB server
 - Create a Grafana server connected to InfluxDB
 - Create a ApeBoard portfolio URL
-- Python3 (This software is tested on Python 3.7)
+- Python3 (This software is tested on Python 3.9.9)
 
 ## Setup
 
@@ -60,16 +60,16 @@ sudo yum install ipa-gothic-fonts ipa-mincho-fonts ipa-pgothic-fonts ipa-pmincho
 
 ## Run
 
-To run periodically, execute below in tmux. Execution is scheduled at every 15min.
-
-```bash
-python main.py
-```
-
 To run only once, execute below. The program will run immediately. 
 
 ```bash
 python main.py --debug
+```
+
+To run periodically, execute below in tmux or nohup. Execution is scheduled at every 15min.
+
+```bash
+python main.py
 ```
 
 ## Tips
