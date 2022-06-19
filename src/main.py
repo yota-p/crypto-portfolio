@@ -52,17 +52,16 @@ def create_screenshot(driver, prefix):
     currenttime = now.strftime('%Y%m%d_%H%M%S')
     filepath = f"./screenshot/{prefix}_{currenttime}.png"
 
-    driver.save_screenshot(filepath)
+    try:
+        driver.save_screenshot(filepath)
+        time.sleep(30)  # wait for screenshot file to be created
+    except:
+        pass
 
-    # wait for screenshot file to be created
-    start = time.time()
-    while time.time() - start <= 30:
-        if os.path.exists(filepath):
-            break
-        else:
-            raise Exception('Failed to create screenshot')
-
-    return filepath
+    if os.path.exists(filepath):
+        return filepath
+    else:
+        return None  # don't raise exception
 
 
 def fetch_price_jpyusdt():
@@ -207,8 +206,6 @@ def fetch_apeboard(driver, url, os_default_download_path, data_store_path):
 
 
 def get_defi_portfolio(url, headless, chromedriver_path, os_default_download_path, data_store_path):
-    logger = getLogger('main')
-
     # create driver
     options = Options()
     # set headless to True, if you don't need to display browser
@@ -225,15 +222,20 @@ def get_defi_portfolio(url, headless, chromedriver_path, os_default_download_pat
     options.add_argument(f'user-agent={user_agent}')
     driver = webdriver.Chrome(chromedriver_path, options=options)
 
-    # open browser & download
     try:
         driver, df_wallet, df_position = fetch_apeboard(driver, url, os_default_download_path, data_store_path)
     except Exception:
+        logger = getLogger('main')
+        logger.exception('exception at get_defi_portfolio')
+
         filepath_screenshot = create_screenshot(driver, 'error')
-        logger.error('failed to fetch_apeboard. \n' + traceback.format_exc() + f'\nScreenshot: {filepath_screenshot}')
-        raise Exception()
-    finally:
+        logger.error(f'saved screenshot to {filepath_screenshot}')
+
         driver.quit()
+        raise
+        # raise Exception(f'failed to fetch_apeboard. screenshot: {filepath_screenshot}')
+
+    driver.quit()
 
     return df_wallet, df_position
 
@@ -323,16 +325,15 @@ def main(exch_list, exch_secrets, url, headless, chromedriver_path, os_default_d
     timestamp = int(time.time() * 1000)
 
     logger = getLogger('main')
-    logger.info(f'iteration at timestamp={timestamp}')
+    logger.info(f"iteration at {datetime.datetime.fromtimestamp(timestamp//1000).strftime('%Y%m%d-%H%M%S')}")
 
     try:
         # get portfolio data as dataframe
         df_wallet_cefi = get_cefi_portfolio(exch_list, exch_secrets)
-        df_wallet_defi, df_position_defi = get_defi_portfolio(url, headless, chromedriver_path, os_default_download_path, data_store_path)
+        logger.debug('finished get_cefi_portfolio')
 
-        # print(df_wallet_cefi)
-        # print(df_wallet_defi)
-        # print(df_position_defi)
+        df_wallet_defi, df_position_defi = get_defi_portfolio(url, headless, chromedriver_path, os_default_download_path, data_store_path)
+        logger.debug('finished get_defi_portfolio')
 
         # add JPY
         price_jpyusdt = fetch_price_jpyusdt()
@@ -342,9 +343,9 @@ def main(exch_list, exch_secrets, url, headless, chromedriver_path, os_default_d
 
         # write to database
         write_to_influxdb(timestamp, df_wallet_defi, df_position_defi, df_wallet_cefi, influxdb_config)
-        logger.info('wrote to database')
+        logger.debug('wrote to database')
     except Exception:
-        logger.critical(f'caught Exception on iteration at timestamp={timestamp}')
+        logger.exception(f"caught Exception on iteration at {datetime.datetime.fromtimestamp(timestamp//1000).strftime('%Y%m%d-%H%M%S')}")
 
 
 if __name__ == '__main__':
@@ -372,8 +373,6 @@ if __name__ == '__main__':
     # Execution parameter
     exec_name = datetime.datetime.now(tz.gettz('UTC')).strftime('%Y%m%d-%H%M%S')  # YYYYMMDD-HHMMSS
     env = 'dev' if debug else 'prd'
-    BASE_OUT_DIR = f'../data/{env}/{exec_name}' # File output dir
-    pathlib.Path(BASE_OUT_DIR).mkdir(exist_ok=True, parents=True)
 
     # Logger
     # for cloudwatch
