@@ -1,6 +1,6 @@
 # crypto-portfolio
 
-This is a bot to collect balance from CeFi/DeFi wallets and write to InfluxDB. Currently only available for spot wallets. Below is example of the dashboard:
+A bot to collect balance from CeFi/DeFi wallets and write to InfluxDB. Currently only available for spot wallets. Below is example of the dashboard:
 
 ![Grafana Dashboard 1](image/grafana-dashboard-1.png)
 ![Grafana Dashboard 2](image/grafana-dashboard-2.png)
