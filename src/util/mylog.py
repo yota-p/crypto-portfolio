@@ -236,13 +236,13 @@ if __name__ == '__main__':
         logrecord_constants={'test1': 1, 'test2': 'aaa'}
         )
 
-    logger.debug(msg='Hello DEBUG')
-    logger.info(msg='Hello INFO')
-    logger.warning(msg='Hello WARNING')
-    logger.error(msg='Hello ERROR')
-    logger.critical(msg='Hello CRITICAL')
-    logger.info('Sign up', extra={'referral_code': '52d6ce'})
-    logger.info(msg='Hello World2', extra={'attach_file': '/tmp/mylog.log'})
+    # logger.debug(msg='Hello DEBUG')
+    # logger.info(msg='Hello INFO')
+    # logger.warning(msg='Hello WARNING')
+    # logger.error(msg='Hello ERROR')
+    # logger.critical(msg='Hello CRITICAL')
+    # logger.info('Sign up', extra={'referral_code': '52d6ce'})
+    # logger.info(msg='Hello World2', extra={'attach_file': '/tmp/mylog.log'})
 
     try:
         raise Exception('test exception')
