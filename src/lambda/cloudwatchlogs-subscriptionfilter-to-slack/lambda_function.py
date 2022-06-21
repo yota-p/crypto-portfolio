@@ -35,7 +35,7 @@ def lambda_handler(event, context):
         header = f'<{link}|:rotating_light: *CloudWatch Alarm | {subscription_filters} | {region} | {account_id}*>'
         body = log_dict['message']['message']
         if 'exc_info' in log_dict['message'].keys():  # add traceback
-            body += f"\n```{log_dict['message']['exc_info']}```"
+            body += f"\n```\n{log_dict['message']['exc_info']}\n```"
         footer = f"*Log group*\t{log_group}" \
             + f"\n*Log stream*\t{log_stream}" \
             + f"\n*Log level*\t{log_dict['message'].get('levelname')}" \
