@@ -85,7 +85,7 @@ def fetch_market_prices(symbols: set) -> pd.DataFrame:
     for symbol in symbols:
         pair = f'{symbol}/USDT'
         if pair not in markets.keys():
-            if symbol in ('USDT', 'LDUSDT', 'LDBUSD'):  # LDUSDT: Lending USDT for binance
+            if symbol in ('USD', 'USDT', 'LDUSDT', 'LDBUSD'):  # LDUSDT: Lending USDT for binance
                 price_usd = 1.0  # Assuming stable coins are maintaining peg
                 data.append({'symbol': symbol, 'price_usd': price_usd})
             elif symbol == 'JPY':
