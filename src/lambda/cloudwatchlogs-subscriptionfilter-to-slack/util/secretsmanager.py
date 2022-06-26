@@ -7,7 +7,7 @@ from botocore.exceptions import ClientError
 import json
 
 
-def get_secret(secret_name, region_name="ap-northeast-1"):
+def get_secret(secret_name, region_name='us-east-2'):
 
     # Create a Secrets Manager client
     session = boto3.session.Session()
