@@ -63,13 +63,9 @@ def create_screenshot(driver, prefix):
         return None  # don't raise exception
 
 
-def fetch_price_jpyusdt():
-    # calculate jpy/usdt
-    price_btcjpy = ccxt.bitflyer().fetch_ohlcv(f'BTC/JPY', '1m')[-1][4]
-    price_btcusdt = ccxt.binance().fetch_ohlcv(f'BTC/USDT', '1m')[-1][4]
-    price_jpyusdt = price_btcusdt / price_btcjpy
-
-    return price_jpyusdt
+def fetch_price_usdjpy():
+    price_usdjpy = ccxt.ftx().fetch_ohlcv(f'USD/JPY', '1m')[-1][4]
+    return price_usdjpy
 
 
 ##################################################################
@@ -92,7 +88,7 @@ def fetch_market_prices(symbols: set) -> pd.DataFrame:
                 price_usd = 1.0  # Assuming stable coins are maintaining peg
                 data.append({'symbol': symbol, 'price_usd': price_usd})
             elif symbol == 'JPY':
-                data.append({'symbol': symbol, 'price_usd': fetch_price_jpyusdt()})
+                data.append({'symbol': symbol, 'price_usd': 1.0 / fetch_price_usdjpy()})
             else:
                 raise ValueError(f'pair={pair} does not exist in exchange=binance')
         else:
@@ -338,10 +334,10 @@ def main(exch_list, exch_secrets, url, headless, chromedriver_path, os_default_d
         logger.debug('finished get_defi_portfolio')
 
         # add JPY
-        price_jpyusdt = fetch_price_jpyusdt()
-        df_wallet_cefi['JPY'] = df_wallet_cefi['USD'] / price_jpyusdt
-        df_wallet_defi['JPY'] = df_wallet_defi['value'] / price_jpyusdt
-        df_position_defi['JPY'] = df_position_defi['value'] / price_jpyusdt
+        price_usdjpy = fetch_price_usdjpy()
+        df_wallet_cefi['JPY'] = df_wallet_cefi['USD'] * price_usdjpy
+        df_wallet_defi['JPY'] = df_wallet_defi['value'] * price_usdjpy
+        df_position_defi['JPY'] = df_position_defi['value'] * price_usdjpy
 
         # write to database
         write_to_influxdb(timestamp, df_wallet_defi, df_position_defi, df_wallet_cefi, influxdb_config)
