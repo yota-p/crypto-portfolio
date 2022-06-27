@@ -1,999 +1,1082 @@
 {
-    "annotations": {
-      "list": [
-        {
-          "builtIn": 1,
-          "datasource": "-- Grafana --",
-          "enable": true,
-          "hide": true,
-          "iconColor": "rgba(0, 211, 255, 1)",
-          "name": "Annotations & Alerts",
-          "target": {
-            "limit": 100,
-            "matchAny": false,
-            "tags": [],
-            "type": "dashboard"
-          },
-          "type": "dashboard"
-        }
-      ]
+  "__inputs": [
+    {
+      "name": "DS_MANAGEMENT/INFLUXDB",
+      "label": "management/InfluxDB",
+      "description": "",
+      "type": "datasource",
+      "pluginId": "influxdb",
+      "pluginName": "InfluxDB"
     },
-    "editable": true,
-    "fiscalYearStartMonth": 0,
-    "graphTooltip": 0,
-    "id": 4,
-    "links": [],
-    "liveNow": false,
-    "panels": [
+    {
+      "name": "VAR_INVESTED_JPY",
+      "type": "constant",
+      "label": "invested_jpy",
+      "value": "10480000",
+      "description": ""
+    }
+  ],
+  "__elements": [],
+  "__requires": [
+    {
+      "type": "panel",
+      "id": "gauge",
+      "name": "Gauge",
+      "version": ""
+    },
+    {
+      "type": "grafana",
+      "id": "grafana",
+      "name": "Grafana",
+      "version": "9.0.1"
+    },
+    {
+      "type": "datasource",
+      "id": "influxdb",
+      "name": "InfluxDB",
+      "version": "1.0.0"
+    },
+    {
+      "type": "panel",
+      "id": "piechart",
+      "name": "Pie chart",
+      "version": ""
+    },
+    {
+      "type": "panel",
+      "id": "stat",
+      "name": "Stat",
+      "version": ""
+    },
+    {
+      "type": "panel",
+      "id": "table",
+      "name": "Table",
+      "version": ""
+    },
+    {
+      "type": "panel",
+      "id": "timeseries",
+      "name": "Time series",
+      "version": ""
+    }
+  ],
+  "annotations": {
+    "list": [
       {
+        "builtIn": 1,
         "datasource": {
-          "type": "influxdb",
-          "uid": "9--BXQJ7z"
+          "type": "datasource",
+          "uid": "grafana"
         },
-        "fieldConfig": {
-          "defaults": {
-            "color": {
-              "fixedColor": "text",
-              "mode": "fixed"
-            },
-            "mappings": [],
-            "thresholds": {
-              "mode": "absolute",
-              "steps": [
-                {
-                  "color": "green",
-                  "value": null
-                }
-              ]
-            },
-            "unit": "none"
-          },
-          "overrides": []
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "target": {
+          "limit": 100,
+          "matchAny": false,
+          "tags": [],
+          "type": "dashboard"
         },
-        "gridPos": {
-          "h": 6,
-          "w": 4,
-          "x": 0,
-          "y": 0
-        },
-        "id": 10,
-        "options": {
-          "colorMode": "value",
-          "graphMode": "area",
-          "justifyMode": "auto",
-          "orientation": "horizontal",
-          "reduceOptions": {
-            "calcs": [
-              "lastNotNull"
-            ],
-            "fields": "",
-            "values": false
-          },
-          "text": {},
-          "textMode": "auto"
-        },
-        "pluginVersion": "8.3.4",
-        "targets": [
-          {
-            "alias": "USD",
-            "datasource": {
-              "type": "influxdb",
-              "uid": "9--BXQJ7z"
-            },
-            "hide": false,
-            "query": "SELECT sum(USD) as USD FROM portfolio.infinite.portfolio\nWHERE $timeFilter\nGROUP BY TIME(10s)",
-            "rawQuery": true,
-            "refId": "Total asset (USD)",
-            "resultFormat": "time_series"
-          },
-          {
-            "alias": "JPY",
-            "datasource": {
-              "type": "influxdb",
-              "uid": "9--BXQJ7z"
-            },
-            "hide": false,
-            "query": "SELECT sum(JPY) as JPY FROM portfolio.infinite.portfolio\nWHERE $timeFilter\nGROUP BY TIME(10s)",
-            "rawQuery": true,
-            "refId": "Total asset (JPY)",
-            "resultFormat": "time_series"
-          }
-        ],
-        "title": "Total asset",
-        "type": "stat"
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "iteration": 1656345206949,
+  "links": [],
+  "liveNow": false,
+  "panels": [
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "${DS_MANAGEMENT/INFLUXDB}"
       },
-      {
-        "datasource": {
-          "type": "influxdb",
-          "uid": "9--BXQJ7z"
-        },
-        "description": "",
-        "fieldConfig": {
-          "defaults": {
-            "color": {
-              "mode": "thresholds"
-            },
-            "mappings": [],
-            "thresholds": {
-              "mode": "absolute",
-              "steps": [
-                {
-                  "color": "red",
-                  "value": null
-                },
-                {
-                  "color": "text",
-                  "value": 0
-                },
-                {
-                  "color": "green",
-                  "value": 1
-                }
-              ]
-            },
-            "unit": "none"
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "text",
+            "mode": "fixed"
           },
-          "overrides": []
-        },
-        "gridPos": {
-          "h": 6,
-          "w": 10,
-          "x": 4,
-          "y": 0
-        },
-        "id": 21,
-        "options": {
-          "colorMode": "value",
-          "graphMode": "area",
-          "justifyMode": "auto",
-          "orientation": "auto",
-          "reduceOptions": {
-            "calcs": [
-              "last"
-            ],
-            "fields": "",
-            "values": true
-          },
-          "textMode": "auto"
-        },
-        "pluginVersion": "8.3.4",
-        "targets": [
-          {
-            "alias": "Recent USD",
-            "datasource": {
-              "type": "influxdb",
-              "uid": "9--BXQJ7z"
-            },
-            "query": "SELECT (last(USD)-first(USD)) from (\nSELECT sum(USD) as USD FROM portfolio.infinite.portfolio\nWHERE $timeFilter\nGROUP BY TIME(10s)\n)",
-            "rawQuery": true,
-            "refId": "A",
-            "resultFormat": "time_series"
-          },
-          {
-            "alias": "Recent JPY",
-            "datasource": {
-              "type": "influxdb",
-              "uid": "9--BXQJ7z"
-            },
-            "hide": false,
-            "query": "SELECT (last(JPY)-first(JPY)) from (\nSELECT sum(JPY) as JPY FROM portfolio.infinite.portfolio\nWHERE $timeFilter\nGROUP BY TIME(10s)\n)",
-            "rawQuery": true,
-            "refId": "C",
-            "resultFormat": "time_series"
-          },
-          {
-            "alias": "ALL JPY",
-            "datasource": {
-              "type": "influxdb",
-              "uid": "9--BXQJ7z"
-            },
-            "hide": false,
-            "query": "SELECT (last(JPY)-$invested_jpy) from (\nSELECT sum(JPY) as JPY FROM portfolio.infinite.portfolio\nWHERE $timeFilter\nGROUP BY TIME(10s)\n)",
-            "rawQuery": true,
-            "refId": "B",
-            "resultFormat": "time_series"
-          }
-        ],
-        "title": "Portfolio performance",
-        "type": "stat"
-      },
-      {
-        "datasource": {
-          "type": "influxdb",
-          "uid": "9--BXQJ7z"
-        },
-        "description": "",
-        "fieldConfig": {
-          "defaults": {
-            "color": {
-              "mode": "continuous-RdYlGr"
-            },
-            "mappings": [],
-            "max": 0.1,
-            "min": -0.1,
-            "thresholds": {
-              "mode": "percentage",
-              "steps": [
-                {
-                  "color": "red",
-                  "value": null
-                }
-              ]
-            },
-            "unit": "percentunit"
-          },
-          "overrides": []
-        },
-        "gridPos": {
-          "h": 6,
-          "w": 10,
-          "x": 14,
-          "y": 0
-        },
-        "id": 16,
-        "options": {
-          "orientation": "auto",
-          "reduceOptions": {
-            "calcs": [
-              "last"
-            ],
-            "fields": "",
-            "values": false
-          },
-          "showThresholdLabels": false,
-          "showThresholdMarkers": true,
-          "text": {
-            "titleSize": 15
-          }
-        },
-        "pluginVersion": "8.3.4",
-        "targets": [
-          {
-            "alias": "Recent USD",
-            "datasource": {
-              "type": "influxdb",
-              "uid": "9--BXQJ7z"
-            },
-            "query": "SELECT (last(USD)-first(USD))/first(USD) from (\nSELECT sum(USD) as USD FROM portfolio.infinite.portfolio\nWHERE $timeFilter\nGROUP BY TIME(10s)\n)",
-            "rawQuery": true,
-            "refId": "A",
-            "resultFormat": "time_series"
-          },
-          {
-            "alias": "Recent JPY",
-            "datasource": {
-              "type": "influxdb",
-              "uid": "9--BXQJ7z"
-            },
-            "hide": false,
-            "query": "SELECT (last(JPY)-first(JPY))/first(JPY) from (\nSELECT sum(JPY) as JPY FROM portfolio.infinite.portfolio\nWHERE $timeFilter\nGROUP BY TIME(10s)\n)",
-            "rawQuery": true,
-            "refId": "C",
-            "resultFormat": "time_series"
-          },
-          {
-            "alias": "ALL JPY",
-            "datasource": {
-              "type": "influxdb",
-              "uid": "9--BXQJ7z"
-            },
-            "hide": false,
-            "query": "SELECT (last(JPY)-$invested_jpy) /$invested_jpy from (\nSELECT sum(JPY) as JPY FROM portfolio.infinite.portfolio\nWHERE $timeFilter\nGROUP BY TIME(10s)\n)",
-            "rawQuery": true,
-            "refId": "B",
-            "resultFormat": "time_series"
-          }
-        ],
-        "title": "Portfolio performance",
-        "type": "gauge"
-      },
-      {
-        "datasource": {
-          "type": "influxdb",
-          "uid": "9--BXQJ7z"
-        },
-        "description": "",
-        "fieldConfig": {
-          "defaults": {
-            "color": {
-              "mode": "palette-classic"
-            },
-            "custom": {
-              "axisLabel": "",
-              "axisPlacement": "auto",
-              "barAlignment": 0,
-              "drawStyle": "line",
-              "fillOpacity": 10,
-              "gradientMode": "none",
-              "hideFrom": {
-                "legend": false,
-                "tooltip": false,
-                "viz": false
-              },
-              "lineInterpolation": "smooth",
-              "lineWidth": 1,
-              "pointSize": 5,
-              "scaleDistribution": {
-                "type": "linear"
-              },
-              "showPoints": "never",
-              "spanNulls": false,
-              "stacking": {
-                "group": "A",
-                "mode": "normal"
-              },
-              "thresholdsStyle": {
-                "mode": "off"
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
               }
-            },
-            "decimals": 2,
-            "mappings": [],
-            "thresholds": {
-              "mode": "absolute",
-              "steps": [
-                {
-                  "color": "green",
-                  "value": null
-                }
-              ]
-            },
-            "unit": "none"
-          },
-          "overrides": []
-        },
-        "gridPos": {
-          "h": 7,
-          "w": 12,
-          "x": 0,
-          "y": 6
-        },
-        "id": 23,
-        "options": {
-          "legend": {
-            "calcs": [],
-            "displayMode": "table",
-            "placement": "right"
-          },
-          "tooltip": {
-            "mode": "single"
-          }
-        },
-        "targets": [
-          {
-            "alias": "JPY/USD",
-            "datasource": {
-              "type": "influxdb",
-              "uid": "9--BXQJ7z"
-            },
-            "hide": false,
-            "query": "SELECT JPY/USD FROM (\nSELECT sum(USD) as USD, sum(JPY) as JPY FROM portfolio.infinite.portfolio\nWHERE $timeFilter\nGROUP BY TIME(10s)\n)",
-            "rawQuery": true,
-            "refId": "Total asset (USD)",
-            "resultFormat": "time_series"
-          }
-        ],
-        "title": "FX (JPY/USD)",
-        "type": "timeseries"
-      },
-      {
-        "datasource": {
-          "type": "influxdb",
-          "uid": "9--BXQJ7z"
-        },
-        "fieldConfig": {
-          "defaults": {
-            "color": {
-              "mode": "palette-classic"
-            },
-            "custom": {
-              "axisLabel": "",
-              "axisPlacement": "auto",
-              "barAlignment": 0,
-              "drawStyle": "line",
-              "fillOpacity": 10,
-              "gradientMode": "none",
-              "hideFrom": {
-                "legend": false,
-                "tooltip": false,
-                "viz": false
-              },
-              "lineInterpolation": "smooth",
-              "lineWidth": 1,
-              "pointSize": 5,
-              "scaleDistribution": {
-                "type": "linear"
-              },
-              "showPoints": "never",
-              "spanNulls": false,
-              "stacking": {
-                "group": "A",
-                "mode": "normal"
-              },
-              "thresholdsStyle": {
-                "mode": "off"
-              }
-            },
-            "mappings": [],
-            "thresholds": {
-              "mode": "absolute",
-              "steps": [
-                {
-                  "color": "green",
-                  "value": null
-                }
-              ]
-            },
-            "unit": "none"
-          },
-          "overrides": []
-        },
-        "gridPos": {
-          "h": 7,
-          "w": 12,
-          "x": 12,
-          "y": 6
-        },
-        "id": 18,
-        "options": {
-          "legend": {
-            "calcs": [],
-            "displayMode": "table",
-            "placement": "right"
-          },
-          "tooltip": {
-            "mode": "single"
-          }
-        },
-        "targets": [
-          {
-            "alias": "Total",
-            "datasource": {
-              "type": "influxdb",
-              "uid": "9--BXQJ7z"
-            },
-            "hide": false,
-            "query": "SELECT USD FROM (\nSELECT sum(USD) as USD FROM portfolio.infinite.portfolio\nWHERE $timeFilter\nGROUP BY TIME(10s)\n)",
-            "rawQuery": true,
-            "refId": "Total asset (USD)",
-            "resultFormat": "time_series"
-          }
-        ],
-        "title": "Total Asset (USD)",
-        "type": "timeseries"
-      },
-      {
-        "datasource": {
-          "type": "influxdb",
-          "uid": "9--BXQJ7z"
-        },
-        "fieldConfig": {
-          "defaults": {
-            "color": {
-              "mode": "palette-classic"
-            },
-            "custom": {
-              "axisLabel": "",
-              "axisPlacement": "auto",
-              "barAlignment": 0,
-              "drawStyle": "line",
-              "fillOpacity": 10,
-              "gradientMode": "none",
-              "hideFrom": {
-                "legend": false,
-                "tooltip": false,
-                "viz": false
-              },
-              "lineInterpolation": "smooth",
-              "lineWidth": 1,
-              "pointSize": 5,
-              "scaleDistribution": {
-                "type": "linear"
-              },
-              "showPoints": "never",
-              "spanNulls": false,
-              "stacking": {
-                "group": "A",
-                "mode": "normal"
-              },
-              "thresholdsStyle": {
-                "mode": "off"
-              }
-            },
-            "mappings": [],
-            "thresholds": {
-              "mode": "absolute",
-              "steps": [
-                {
-                  "color": "green",
-                  "value": null
-                }
-              ]
-            },
-            "unit": "none"
-          },
-          "overrides": []
-        },
-        "gridPos": {
-          "h": 7,
-          "w": 12,
-          "x": 0,
-          "y": 13
-        },
-        "id": 17,
-        "options": {
-          "legend": {
-            "calcs": [],
-            "displayMode": "table",
-            "placement": "right"
-          },
-          "tooltip": {
-            "mode": "single"
-          }
-        },
-        "targets": [
-          {
-            "alias": "PnL",
-            "datasource": {
-              "type": "influxdb",
-              "uid": "9--BXQJ7z"
-            },
-            "hide": false,
-            "query": "SELECT difference(USD) as USD FROM (\nSELECT sum(USD) as USD FROM portfolio.infinite.portfolio\nWHERE $timeFilter\nGROUP BY TIME(10s)\n)",
-            "rawQuery": true,
-            "refId": "PnL (USD)",
-            "resultFormat": "time_series"
-          }
-        ],
-        "title": "PnL (USD)",
-        "type": "timeseries"
-      },
-      {
-        "datasource": {
-          "type": "influxdb",
-          "uid": "9--BXQJ7z"
-        },
-        "description": "Assets < $1 are not shown",
-        "fieldConfig": {
-          "defaults": {
-            "color": {
-              "mode": "palette-classic"
-            },
-            "custom": {
-              "axisLabel": "",
-              "axisPlacement": "auto",
-              "barAlignment": 0,
-              "drawStyle": "line",
-              "fillOpacity": 10,
-              "gradientMode": "none",
-              "hideFrom": {
-                "legend": false,
-                "tooltip": false,
-                "viz": false
-              },
-              "lineInterpolation": "smooth",
-              "lineWidth": 1,
-              "pointSize": 5,
-              "scaleDistribution": {
-                "type": "linear"
-              },
-              "showPoints": "never",
-              "spanNulls": false,
-              "stacking": {
-                "group": "A",
-                "mode": "normal"
-              },
-              "thresholdsStyle": {
-                "mode": "off"
-              }
-            },
-            "mappings": [],
-            "thresholds": {
-              "mode": "absolute",
-              "steps": [
-                {
-                  "color": "green",
-                  "value": null
-                }
-              ]
-            },
-            "unit": "none"
-          },
-          "overrides": []
-        },
-        "gridPos": {
-          "h": 7,
-          "w": 12,
-          "x": 12,
-          "y": 13
-        },
-        "id": 19,
-        "options": {
-          "legend": {
-            "calcs": [],
-            "displayMode": "table",
-            "placement": "right"
-          },
-          "tooltip": {
-            "mode": "single"
-          }
-        },
-        "targets": [
-          {
-            "alias": "$tag_symbol",
-            "datasource": {
-              "type": "influxdb",
-              "uid": "9--BXQJ7z"
-            },
-            "hide": false,
-            "query": "SELECT USD from (\nSELECT sum(USD) as USD FROM portfolio.infinite.portfolio\nWHERE $timeFilter\nGROUP BY TIME(10s), symbol\n)\nWHERE USD > 1\nGROUP BY symbol",
-            "rawQuery": true,
-            "refId": "Assets per symbol (USD)",
-            "resultFormat": "time_series"
-          }
-        ],
-        "title": "Assets per symbol (USD)",
-        "type": "timeseries"
-      },
-      {
-        "datasource": {
-          "type": "influxdb",
-          "uid": "9--BXQJ7z"
-        },
-        "description": "Assets < $1 are not shown",
-        "fieldConfig": {
-          "defaults": {
-            "color": {
-              "fixedColor": "#ffffff",
-              "mode": "fixed"
-            },
-            "mappings": [],
-            "thresholds": {
-              "mode": "absolute",
-              "steps": [
-                {
-                  "color": "green",
-                  "value": null
-                }
-              ]
-            },
-            "unit": "currencyUSD"
-          },
-          "overrides": []
-        },
-        "gridPos": {
-          "h": 6,
-          "w": 24,
-          "x": 0,
-          "y": 20
-        },
-        "id": 6,
-        "options": {
-          "colorMode": "none",
-          "graphMode": "none",
-          "justifyMode": "center",
-          "orientation": "auto",
-          "reduceOptions": {
-            "calcs": [
-              "last"
-            ],
-            "fields": "",
-            "values": false
-          },
-          "textMode": "value_and_name"
-        },
-        "pluginVersion": "8.3.4",
-        "targets": [
-          {
-            "alias": "$tag_symbol",
-            "datasource": {
-              "type": "influxdb",
-              "uid": "9--BXQJ7z"
-            },
-            "query": "SELECT USD from (\nSELECT sum(USD) as USD FROM portfolio.infinite.portfolio\nWHERE time > now() -1h\nGROUP BY TIME(10s), symbol\n) \nWHERE USD > 1\nGROUP BY symbol",
-            "rawQuery": true,
-            "refId": "Assets per symbol (USD)",
-            "resultFormat": "time_series"
-          }
-        ],
-        "title": "Assets per symbol (USD)",
-        "transformations": [],
-        "type": "stat"
-      },
-      {
-        "datasource": {
-          "type": "influxdb",
-          "uid": "9--BXQJ7z"
-        },
-        "description": "Assets < $1 are not shown",
-        "fieldConfig": {
-          "defaults": {
-            "color": {
-              "fixedColor": "#808080",
-              "mode": "palette-classic"
-            },
-            "custom": {
-              "hideFrom": {
-                "legend": false,
-                "tooltip": false,
-                "viz": false
-              }
-            },
-            "mappings": [],
-            "unit": "currencyUSD"
-          },
-          "overrides": []
-        },
-        "gridPos": {
-          "h": 8,
-          "w": 12,
-          "x": 0,
-          "y": 26
-        },
-        "id": 2,
-        "options": {
-          "displayLabels": [
-            "percent",
-            "name",
-            "value"
-          ],
-          "legend": {
-            "displayMode": "list",
-            "placement": "right",
-            "values": [
-              "percent"
             ]
           },
-          "pieType": "donut",
-          "reduceOptions": {
-            "calcs": [
-              "last"
-            ],
-            "fields": "",
-            "values": false
-          },
-          "tooltip": {
-            "mode": "single"
-          }
+          "unit": "none"
         },
-        "targets": [
-          {
-            "alias": "$tag_symbol",
-            "datasource": {
-              "type": "influxdb",
-              "uid": "9--BXQJ7z"
-            },
-            "query": "SELECT last(USD) from (\nSELECT sum(USD) as USD FROM portfolio.infinite.portfolio\nWHERE $timeFilter\nGROUP BY TIME(10s), symbol\n) \nWHERE time > now() - 1h and USD > 1\nGROUP BY symbol",
-            "rawQuery": true,
-            "refId": "Assets per symbol (USD)",
-            "resultFormat": "time_series"
-          }
-        ],
-        "title": "Assets per symbol (USD)",
-        "type": "piechart"
+        "overrides": []
       },
-      {
-        "datasource": {
-          "type": "influxdb",
-          "uid": "9--BXQJ7z"
-        },
-        "description": "Assets < $1 are not shown",
-        "fieldConfig": {
-          "defaults": {
-            "color": {
-              "fixedColor": "#808080",
-              "mode": "palette-classic"
-            },
-            "custom": {
-              "hideFrom": {
-                "legend": false,
-                "tooltip": false,
-                "viz": false
-              }
-            },
-            "mappings": [],
-            "unit": "currencyUSD"
-          },
-          "overrides": []
-        },
-        "gridPos": {
-          "h": 8,
-          "w": 12,
-          "x": 12,
-          "y": 26
-        },
-        "id": 13,
-        "options": {
-          "displayLabels": [
-            "percent",
-            "name",
-            "value"
+      "gridPos": {
+        "h": 6,
+        "w": 4,
+        "x": 0,
+        "y": 0
+      },
+      "id": 10,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
           ],
-          "legend": {
-            "displayMode": "list",
-            "placement": "right",
-            "values": [
-              "percent"
+          "fields": "",
+          "values": false
+        },
+        "text": {},
+        "textMode": "auto"
+      },
+      "pluginVersion": "9.0.1",
+      "targets": [
+        {
+          "alias": "USD",
+          "datasource": {
+            "type": "influxdb",
+            "uid": "${DS_MANAGEMENT/INFLUXDB}"
+          },
+          "hide": false,
+          "query": "SELECT sum(USD) as USD FROM portfolio.infinite.portfolio\nWHERE $timeFilter\nGROUP BY TIME(10s)",
+          "rawQuery": true,
+          "refId": "Total asset (USD)",
+          "resultFormat": "time_series"
+        },
+        {
+          "alias": "JPY",
+          "datasource": {
+            "type": "influxdb",
+            "uid": "${DS_MANAGEMENT/INFLUXDB}"
+          },
+          "hide": false,
+          "query": "SELECT sum(JPY) as JPY FROM portfolio.infinite.portfolio\nWHERE $timeFilter\nGROUP BY TIME(10s)",
+          "rawQuery": true,
+          "refId": "Total asset (JPY)",
+          "resultFormat": "time_series"
+        }
+      ],
+      "title": "Total asset",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "${DS_MANAGEMENT/INFLUXDB}"
+      },
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "text",
+                "value": 0
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
             ]
           },
-          "pieType": "donut",
-          "reduceOptions": {
-            "calcs": [
-              "last"
-            ],
-            "fields": "",
-            "values": false
-          },
-          "tooltip": {
-            "mode": "single"
-          }
+          "unit": "none"
         },
-        "targets": [
-          {
-            "alias": "exchange/$tag_exchange",
-            "datasource": {
-              "type": "influxdb",
-              "uid": "9--BXQJ7z"
-            },
-            "query": "SELECT last(USD) from (\nSELECT sum(USD) as USD FROM portfolio.infinite.portfolio\nWHERE $timeFilter and location = 'cefi'\nGROUP BY TIME(10s), exchange\n) \nWHERE time > now() - 1h and USD > 1\nGROUP BY exchange",
-            "rawQuery": true,
-            "refId": "CeFi",
-            "resultFormat": "time_series"
-          },
-          {
-            "alias": "$tag_chain/wallet",
-            "datasource": {
-              "type": "influxdb",
-              "uid": "9--BXQJ7z"
-            },
-            "hide": false,
-            "query": "SELECT last(USD) from (\nSELECT sum(USD) as USD FROM portfolio.infinite.portfolio\nWHERE $timeFilter and location = 'defi' and type = 'wallet'\nGROUP BY TIME(10s), chain\n) \nWHERE time > now() - 1h\nGROUP BY chain",
-            "rawQuery": true,
-            "refId": "DeFi_Wallet",
-            "resultFormat": "time_series"
-          },
-          {
-            "alias": "$tag_chain/$tag_protocol",
-            "datasource": {
-              "type": "influxdb",
-              "uid": "9--BXQJ7z"
-            },
-            "hide": false,
-            "query": "SELECT last(USD) from (\nSELECT sum(USD) as USD FROM portfolio.infinite.portfolio\nWHERE $timeFilter and location = 'defi' and type = 'position'\nGROUP BY TIME(10s), chain, protocol\n) \nWHERE time > now() - 1h\nGROUP BY chain, protocol",
-            "rawQuery": true,
-            "refId": "Defi_Position",
-            "resultFormat": "time_series"
-          }
-        ],
-        "title": "Assets per location (USD)",
-        "type": "piechart"
+        "overrides": []
       },
-      {
-        "datasource": {
-          "type": "influxdb",
-          "uid": "9--BXQJ7z"
+      "gridPos": {
+        "h": 6,
+        "w": 10,
+        "x": 4,
+        "y": 0
+      },
+      "id": 21,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "last"
+          ],
+          "fields": "",
+          "values": true
         },
-        "description": "",
-        "fieldConfig": {
-          "defaults": {
-            "color": {
-              "mode": "thresholds"
+        "textMode": "auto"
+      },
+      "pluginVersion": "9.0.1",
+      "targets": [
+        {
+          "alias": "Recent USD",
+          "datasource": {
+            "type": "influxdb",
+            "uid": "${DS_MANAGEMENT/INFLUXDB}"
+          },
+          "query": "SELECT (last(USD)-first(USD)) from (\nSELECT sum(USD) as USD FROM portfolio.infinite.portfolio\nWHERE $timeFilter\nGROUP BY TIME(10s)\n)",
+          "rawQuery": true,
+          "refId": "A",
+          "resultFormat": "time_series"
+        },
+        {
+          "alias": "Recent JPY",
+          "datasource": {
+            "type": "influxdb",
+            "uid": "${DS_MANAGEMENT/INFLUXDB}"
+          },
+          "hide": false,
+          "query": "SELECT (last(JPY)-first(JPY)) from (\nSELECT sum(JPY) as JPY FROM portfolio.infinite.portfolio\nWHERE $timeFilter\nGROUP BY TIME(10s)\n)",
+          "rawQuery": true,
+          "refId": "C",
+          "resultFormat": "time_series"
+        },
+        {
+          "alias": "ALL JPY",
+          "datasource": {
+            "type": "influxdb",
+            "uid": "${DS_MANAGEMENT/INFLUXDB}"
+          },
+          "hide": false,
+          "query": "SELECT (last(JPY)-$invested_jpy) from (\nSELECT sum(JPY) as JPY FROM portfolio.infinite.portfolio\nWHERE $timeFilter\nGROUP BY TIME(10s)\n)",
+          "rawQuery": true,
+          "refId": "B",
+          "resultFormat": "time_series"
+        }
+      ],
+      "title": "Portfolio performance",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "${DS_MANAGEMENT/INFLUXDB}"
+      },
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "continuous-RdYlGr"
+          },
+          "mappings": [],
+          "max": 0.1,
+          "min": -0.1,
+          "thresholds": {
+            "mode": "percentage",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              }
+            ]
+          },
+          "unit": "percentunit"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 10,
+        "x": 14,
+        "y": 0
+      },
+      "id": 16,
+      "options": {
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "last"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true,
+        "text": {
+          "titleSize": 15
+        }
+      },
+      "pluginVersion": "9.0.1",
+      "targets": [
+        {
+          "alias": "Recent USD",
+          "datasource": {
+            "type": "influxdb",
+            "uid": "${DS_MANAGEMENT/INFLUXDB}"
+          },
+          "query": "SELECT (last(USD)-first(USD))/first(USD) from (\nSELECT sum(USD) as USD FROM portfolio.infinite.portfolio\nWHERE $timeFilter\nGROUP BY TIME(10s)\n)",
+          "rawQuery": true,
+          "refId": "A",
+          "resultFormat": "time_series"
+        },
+        {
+          "alias": "Recent JPY",
+          "datasource": {
+            "type": "influxdb",
+            "uid": "${DS_MANAGEMENT/INFLUXDB}"
+          },
+          "hide": false,
+          "query": "SELECT (last(JPY)-first(JPY))/first(JPY) from (\nSELECT sum(JPY) as JPY FROM portfolio.infinite.portfolio\nWHERE $timeFilter\nGROUP BY TIME(10s)\n)",
+          "rawQuery": true,
+          "refId": "C",
+          "resultFormat": "time_series"
+        },
+        {
+          "alias": "ALL JPY",
+          "datasource": {
+            "type": "influxdb",
+            "uid": "${DS_MANAGEMENT/INFLUXDB}"
+          },
+          "hide": false,
+          "query": "SELECT (last(JPY)-$invested_jpy) /$invested_jpy from (\nSELECT sum(JPY) as JPY FROM portfolio.infinite.portfolio\nWHERE $timeFilter\nGROUP BY TIME(10s)\n)",
+          "rawQuery": true,
+          "refId": "B",
+          "resultFormat": "time_series"
+        }
+      ],
+      "title": "Portfolio performance",
+      "type": "gauge"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "${DS_MANAGEMENT/INFLUXDB}"
+      },
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
             },
-            "custom": {
-              "align": "auto",
-              "displayMode": "auto",
-              "filterable": true
+            "lineInterpolation": "smooth",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
             },
-            "mappings": [],
-            "thresholds": {
-              "mode": "absolute",
-              "steps": [
-                {
-                  "color": "green",
-                  "value": null
-                }
-              ]
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "normal"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
             }
           },
-          "overrides": [
-            {
-              "matcher": {
-                "id": "byName",
-                "options": "amount"
-              },
-              "properties": [
-                {
-                  "id": "custom.width"
-                }
-              ]
+          "decimals": 2,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 0,
+        "y": 6
+      },
+      "id": 23,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "table",
+          "placement": "right"
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "alias": "JPY/USD",
+          "datasource": {
+            "type": "influxdb",
+            "uid": "${DS_MANAGEMENT/INFLUXDB}"
+          },
+          "hide": false,
+          "query": "SELECT JPY/USD FROM (\nSELECT sum(USD) as USD, sum(JPY) as JPY FROM portfolio.infinite.portfolio\nWHERE $timeFilter\nGROUP BY TIME(10s)\n)",
+          "rawQuery": true,
+          "refId": "Total asset (USD)",
+          "resultFormat": "time_series"
+        }
+      ],
+      "title": "FX (JPY/USD)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "${DS_MANAGEMENT/INFLUXDB}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "smooth",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "normal"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
             }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 12,
+        "y": 6
+      },
+      "id": 18,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "table",
+          "placement": "right"
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "alias": "Total",
+          "datasource": {
+            "type": "influxdb",
+            "uid": "${DS_MANAGEMENT/INFLUXDB}"
+          },
+          "hide": false,
+          "query": "SELECT USD FROM (\nSELECT sum(USD) as USD FROM portfolio.infinite.portfolio\nWHERE $timeFilter\nGROUP BY TIME(10s)\n)",
+          "rawQuery": true,
+          "refId": "Total asset (USD)",
+          "resultFormat": "time_series"
+        }
+      ],
+      "title": "Total Asset (USD)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "${DS_MANAGEMENT/INFLUXDB}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "smooth",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "normal"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 0,
+        "y": 13
+      },
+      "id": 17,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "table",
+          "placement": "right"
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "alias": "PnL",
+          "datasource": {
+            "type": "influxdb",
+            "uid": "${DS_MANAGEMENT/INFLUXDB}"
+          },
+          "hide": false,
+          "query": "SELECT difference(USD) as USD FROM (\nSELECT sum(USD) as USD FROM portfolio.infinite.portfolio\nWHERE $timeFilter\nGROUP BY TIME(10s)\n)",
+          "rawQuery": true,
+          "refId": "PnL (USD)",
+          "resultFormat": "time_series"
+        }
+      ],
+      "title": "PnL (USD)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "${DS_MANAGEMENT/INFLUXDB}"
+      },
+      "description": "Assets < $1 are not shown",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "smooth",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "normal"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 12,
+        "x": 12,
+        "y": 13
+      },
+      "id": 19,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "table",
+          "placement": "right"
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "alias": "$tag_symbol",
+          "datasource": {
+            "type": "influxdb",
+            "uid": "${DS_MANAGEMENT/INFLUXDB}"
+          },
+          "hide": false,
+          "query": "SELECT USD from (\nSELECT sum(USD) as USD FROM portfolio.infinite.portfolio\nWHERE $timeFilter\nGROUP BY TIME(10s), symbol\n)\nWHERE USD > 1\nGROUP BY symbol",
+          "rawQuery": true,
+          "refId": "Assets per symbol (USD)",
+          "resultFormat": "time_series"
+        }
+      ],
+      "title": "Assets per symbol (USD)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "${DS_MANAGEMENT/INFLUXDB}"
+      },
+      "description": "Assets < $1 are not shown",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "#ffffff",
+            "mode": "fixed"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "currencyUSD"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 24,
+        "x": 0,
+        "y": 20
+      },
+      "id": 6,
+      "options": {
+        "colorMode": "none",
+        "graphMode": "none",
+        "justifyMode": "center",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "last"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "textMode": "value_and_name"
+      },
+      "pluginVersion": "9.0.1",
+      "targets": [
+        {
+          "alias": "$tag_symbol",
+          "datasource": {
+            "type": "influxdb",
+            "uid": "${DS_MANAGEMENT/INFLUXDB}"
+          },
+          "query": "SELECT USD from (\nSELECT sum(USD) as USD FROM portfolio.infinite.portfolio\nWHERE time > now() -1h\nGROUP BY TIME(10s), symbol\n) \nWHERE USD > 1\nGROUP BY symbol",
+          "rawQuery": true,
+          "refId": "Assets per symbol (USD)",
+          "resultFormat": "time_series"
+        }
+      ],
+      "title": "Assets per symbol (USD)",
+      "transformations": [],
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "${DS_MANAGEMENT/INFLUXDB}"
+      },
+      "description": "Assets < $1 are not shown",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "#808080",
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            }
+          },
+          "mappings": [],
+          "unit": "currencyUSD"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 26
+      },
+      "id": 2,
+      "options": {
+        "displayLabels": [
+          "percent",
+          "name",
+          "value"
+        ],
+        "legend": {
+          "displayMode": "list",
+          "placement": "right",
+          "values": [
+            "percent"
           ]
         },
-        "gridPos": {
-          "h": 24,
-          "w": 24,
-          "x": 0,
-          "y": 34
+        "pieType": "donut",
+        "reduceOptions": {
+          "calcs": [
+            "last"
+          ],
+          "fields": "",
+          "values": false
         },
-        "id": 12,
-        "options": {
-          "footer": {
-            "fields": "",
-            "reducer": [
-              "sum"
-            ],
-            "show": true
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "alias": "$tag_symbol",
+          "datasource": {
+            "type": "influxdb",
+            "uid": "${DS_MANAGEMENT/INFLUXDB}"
           },
-          "showHeader": true,
-          "sortBy": []
+          "query": "SELECT last(USD) from (\nSELECT sum(USD) as USD FROM portfolio.infinite.portfolio\nWHERE $timeFilter\nGROUP BY TIME(10s), symbol\n) \nWHERE time > now() - 1h and USD > 1\nGROUP BY symbol",
+          "rawQuery": true,
+          "refId": "Assets per symbol (USD)",
+          "resultFormat": "time_series"
+        }
+      ],
+      "title": "Assets per symbol (USD)",
+      "type": "piechart"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "${DS_MANAGEMENT/INFLUXDB}"
+      },
+      "description": "Assets < $1 are not shown",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "#808080",
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            }
+          },
+          "mappings": [],
+          "unit": "currencyUSD"
         },
-        "pluginVersion": "8.3.4",
-        "targets": [
-          {
-            "datasource": {
-              "type": "influxdb",
-              "uid": "9--BXQJ7z"
-            },
-            "query": "SELECT last(amount) as amount, last(USD) as USD, last(JPY) as JPY from (\nSELECT sum(amount) as amount, sum(USD) as USD, sum(JPY) as JPY FROM portfolio.infinite.portfolio\nWHERE $timeFilter\nGROUP BY TIME(10s)\n) \nWHERE time > now() - 1h\nGROUP BY location, exchange, type, chain, symbol",
-            "rawQuery": true,
-            "refId": "A",
-            "resultFormat": "table"
-          }
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 26
+      },
+      "id": 13,
+      "options": {
+        "displayLabels": [
+          "percent",
+          "name",
+          "value"
         ],
-        "title": "Assets per exchange & symbol",
-        "transformations": [
-          {
-            "id": "organize",
-            "options": {
-              "excludeByName": {
-                "Time": true
-              },
-              "indexByName": {
-                "JPY": 8,
-                "Time": 0,
-                "USD": 7,
-                "amount": 6,
-                "chain": 4,
-                "exchange": 2,
-                "location": 1,
-                "symbol": 5,
-                "type": 3
-              },
-              "renameByName": {
-                "Time": "",
-                "chain": "",
-                "exchange": "",
-                "location": "",
-                "type": ""
+        "legend": {
+          "displayMode": "list",
+          "placement": "right",
+          "values": [
+            "percent"
+          ]
+        },
+        "pieType": "donut",
+        "reduceOptions": {
+          "calcs": [
+            "last"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "alias": "exchange/$tag_exchange",
+          "datasource": {
+            "type": "influxdb",
+            "uid": "${DS_MANAGEMENT/INFLUXDB}"
+          },
+          "query": "SELECT last(USD) from (\nSELECT sum(USD) as USD FROM portfolio.infinite.portfolio\nWHERE $timeFilter and location = 'cefi'\nGROUP BY TIME(10s), exchange\n) \nWHERE time > now() - 1h and USD > 1\nGROUP BY exchange",
+          "rawQuery": true,
+          "refId": "CeFi",
+          "resultFormat": "time_series"
+        },
+        {
+          "alias": "$tag_chain/wallet",
+          "datasource": {
+            "type": "influxdb",
+            "uid": "${DS_MANAGEMENT/INFLUXDB}"
+          },
+          "hide": false,
+          "query": "SELECT last(USD) from (\nSELECT sum(USD) as USD FROM portfolio.infinite.portfolio\nWHERE $timeFilter and location = 'defi' and type = 'wallet'\nGROUP BY TIME(10s), chain\n) \nWHERE time > now() - 1h\nGROUP BY chain",
+          "rawQuery": true,
+          "refId": "DeFi_Wallet",
+          "resultFormat": "time_series"
+        },
+        {
+          "alias": "$tag_chain/$tag_protocol",
+          "datasource": {
+            "type": "influxdb",
+            "uid": "${DS_MANAGEMENT/INFLUXDB}"
+          },
+          "hide": false,
+          "query": "SELECT last(USD) from (\nSELECT sum(USD) as USD FROM portfolio.infinite.portfolio\nWHERE $timeFilter and location = 'defi' and type = 'position'\nGROUP BY TIME(10s), chain, protocol\n) \nWHERE time > now() - 1h\nGROUP BY chain, protocol",
+          "rawQuery": true,
+          "refId": "Defi_Position",
+          "resultFormat": "time_series"
+        }
+      ],
+      "title": "Assets per location (USD)",
+      "type": "piechart"
+    },
+    {
+      "datasource": {
+        "type": "influxdb",
+        "uid": "${DS_MANAGEMENT/INFLUXDB}"
+      },
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "displayMode": "auto",
+            "filterable": true
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
               }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "amount"
+            },
+            "properties": [
+              {
+                "id": "custom.width"
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 24,
+        "w": 24,
+        "x": 0,
+        "y": 34
+      },
+      "id": 12,
+      "options": {
+        "footer": {
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": true
+        },
+        "showHeader": true,
+        "sortBy": []
+      },
+      "pluginVersion": "8.3.4",
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "${DS_MANAGEMENT/INFLUXDB}"
+          },
+          "query": "SELECT last(amount) as amount, last(USD) as USD, last(JPY) as JPY from (\nSELECT sum(amount) as amount, sum(USD) as USD, sum(JPY) as JPY FROM portfolio.infinite.portfolio\nWHERE $timeFilter\nGROUP BY TIME(10s)\n) \nWHERE time > now() - 1h\nGROUP BY location, exchange, type, chain, symbol",
+          "rawQuery": true,
+          "refId": "A",
+          "resultFormat": "table"
+        }
+      ],
+      "title": "Assets per exchange & symbol",
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true
+            },
+            "indexByName": {
+              "JPY": 8,
+              "Time": 0,
+              "USD": 7,
+              "amount": 6,
+              "chain": 4,
+              "exchange": 2,
+              "location": 1,
+              "symbol": 5,
+              "type": 3
+            },
+            "renameByName": {
+              "Time": "",
+              "chain": "",
+              "exchange": "",
+              "location": "",
+              "type": ""
             }
           }
-        ],
-        "type": "table"
-      }
-    ],
-    "refresh": false,
-    "schemaVersion": 34,
-    "style": "dark",
-    "tags": [],
-    "templating": {
-      "list": [
-        {
-          "hide": 2,
-          "name": "invested_jpy",
-          "query": "1000000",
-          "skipUrlSync": false,
-          "type": "constant"
         }
-      ]
-    },
-    "time": {
-      "from": "now-24h",
-      "to": "now"
-    },
-    "timepicker": {},
-    "timezone": "",
-    "title": "Portfolio",
-    "uid": "O-qmFws7z",
-    "version": 89,
-    "weekStart": ""
-  }
+      ],
+      "type": "table"
+    }
+  ],
+  "refresh": false,
+  "schemaVersion": 36,
+  "style": "dark",
+  "tags": [],
+  "templating": {
+    "list": [
+      {
+        "hide": 2,
+        "name": "invested_jpy",
+        "query": "${VAR_INVESTED_JPY}",
+        "skipUrlSync": false,
+        "type": "constant",
+        "current": {
+          "value": "${VAR_INVESTED_JPY}",
+          "text": "${VAR_INVESTED_JPY}",
+          "selected": false
+        },
+        "options": [
+          {
+            "value": "${VAR_INVESTED_JPY}",
+            "text": "${VAR_INVESTED_JPY}",
+            "selected": false
+          }
+        ]
+      }
+    ]
+  },
+  "time": {
+    "from": "now-7d",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "",
+  "title": "Portfolio New",
+  "uid": "O-qmFws7y",
+  "version": 1,
+  "weekStart": ""
+}
