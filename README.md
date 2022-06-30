@@ -1,6 +1,6 @@
 # crypto-portfolio
 
-A bot to collect balance from CeFi/DeFi wallets and write to InfluxDB. Currently only available for spot wallets. Below is example of the dashboard:
+A bot to collect balance from CeFi/DeFi wallets and write to InfluxDB. Below is example of the dashboard:
 
 ![Grafana Dashboard 1](image/grafana-dashboard-1.png)
 ![Grafana Dashboard 2](image/grafana-dashboard-2.png)
@@ -71,7 +71,7 @@ sudo yum install ipa-gothic-fonts ipa-mincho-fonts ipa-pgothic-fonts ipa-pmincho
 #### Configs
 
 1. Copy json templates from `config/template/config.json` to `config/config.json`
-2. Edit parameters for `config/config.json`
+2. Edit parameters for `config/config.json`. For exchange_config.markets, enter market type corresponding to ccxt.exchange.defaultType (spot, future, delivery, option, margin). 
 
 ## Run
 

@@ -1,5 +1,39 @@
 {
-    "exch_list": ["gmocoin", "bitbank", "coincheck", "binance", "bybit", "ftx"],
+    "exch_config": {
+        "gmocoin": {
+            "markets": ["spot"],
+            "rate_limit": 100,
+            "base": "JPY"
+        },
+        "bitbank": {
+            "markets": ["spot"],
+            "rate_limit": 100,
+            "base": "JPY"
+        },
+        "coincheck": {
+            "markets": ["spot"],
+            "rate_limit": 100,
+            "base": "JPY"
+        }, 
+        "bybit": {
+            "markets": ["spot", "future"],
+            "note": "swap, option seems to return same data as future. tbd",
+            "rate_limit": 100,
+            "base": "USDT"
+        }, 
+        "ftx": {
+            "markets": ["spot"],
+            "note": "future is included in spot",
+            "rate_limit": 100,
+            "base": "USD"
+        }, 
+        "binance": {
+            "markets": ["spot", "margin", "future", "delivery"],
+            "note": "spot includes binance earn. delivery=option.",
+            "rate_limit": 100,
+            "base": "USDT"
+        }
+    },
     "exchange_secret_name": "secretsmanger_secretname",
     "chromedriver_path": "/path/to/chromedriver",
     "headless": true,

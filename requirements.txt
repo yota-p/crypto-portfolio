@@ -3,7 +3,6 @@ ccxt
 pandas
 influxdb_client
 schedule
-pybit
 boto3
 slack_sdk
 watchtower

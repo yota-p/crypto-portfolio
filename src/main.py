@@ -16,7 +16,6 @@ import shutil
 import schedule
 import re
 import ccxt
-import pybit
 import influxdb_client
 from util.secretsmanager import get_secret
 from util.mylog import create_logger
@@ -71,83 +70,80 @@ def fetch_price_usdjpy():
 ##################################################################
 # CeFi
 ##################################################################
-def fetch_market_prices(symbols: set) -> pd.DataFrame:
-    binance = ccxt.binance()  # use exchange covering most tokens
+def get_cefi_portfolio(exch_config, exch_secrets):
+    data = []  # list of dict
+    for exch, param in exch_config.items():
 
-    # fetch market price for symbols
-    markets = binance.load_markets()
+        base = param['base']  # base currency for the exchange
 
-    data = []
-    for symbol in symbols:
-        pair = f'{symbol}/USDT'
-        if pair not in markets.keys():
-            if symbol.startswith('LD') and f"{symbol.replace('LD', '')}/USDT" in markets.keys():  # binance earn
-                price_usd = binance.fetch_ohlcv(f"{symbol.replace('LD', '')}/USDT", '1m')[-1][4]
-                data.append({'symbol': symbol, 'price_usd': price_usd})
-            elif symbol in ('USD', 'USDT', 'LDUSDT', 'LDBUSD'):  # stable coin
-                price_usd = 1.0  # Assuming stable coins are maintaining peg
-                data.append({'symbol': symbol, 'price_usd': price_usd})
-            elif symbol == 'JPY':
-                data.append({'symbol': symbol, 'price_usd': 1.0 / fetch_price_usdjpy()})
-            else:
-                raise ValueError(f'pair={pair} does not exist in exchange=binance')
-        else:
-            price_usd = binance.fetch_ohlcv(f'{symbol}/USDT', '1m')[-1][4]
-            data.append({'symbol': symbol, 'price_usd': price_usd})
-
-    df_prices = pd.DataFrame.from_dict(data).astype({'symbol': str, 'price_usd': float})
-    return df_prices
-
-
-def fetch_balances(exch_list: list, secrets) -> pd.DataFrame:
-    balances = {}
-
-    for exch in exch_list:
-        if exch == 'bybit':
-            # bybit's spot account can't be fetched from ccxt
-            # https://github.com/ccxt/ccxt/blob/master/python/ccxt/bybit.py#L1490
-            session = pybit.HTTP("https://api.bybit.com",
-                        api_key=secrets[exch]['API_KEY'], api_secret=secrets[exch]['SECRET_KEY'],
-                        spot=True)
-            balance_bybit = session.get_wallet_balance()
-
-            for d in balance_bybit['result']['balances']:
-                balances[exch] = {d['coin']: d['total']}
-
-        else:
+        for market in param['markets']:
             exchange = getattr(ccxt, exch)({
+                'apiKey': exch_secrets[exch]['API_KEY'],
+                'secret': exch_secrets[exch]['SECRET_KEY'],
                 'enableRateLimit': True,
-                'apiKey': secrets[exch]['API_KEY'],
-                'secret': secrets[exch]['SECRET_KEY'],
+                'rate_limit': param['rate_limit'],
+                'options': {'defaultType': market}
                 })
-            response = exchange.fetch_balance()
-            balances[exch] = {}
-            for k, v in response['total'].items():
-                if v != 0.0:
-                    balances[exch][k] = v
+            markets = exchange.load_markets()
+            response = exchange.fetchBalance()
 
-        # convert into dataframe
-        data = []
-        for exch, asset in balances.items():
-            for symbol, amount in asset.items():
-                data.append({'exchange': exch, 'symbol': symbol, 'amount': amount})
+            for symbol, amount in response['total'].items():
+                if amount != 0.0:
+                    pair = f'{symbol}/{base}'
+                    kwargs = {}
+                    kwargs['since'] = int(time.time() * 1000) - 5 * 60 * 1000  # fetch last 5 min
 
-        df_wallet = pd.DataFrame.from_dict(data) \
-            .astype({'exchange': str, 'symbol': str, 'amount': float})
+                    # get price_base (base currency depends on exchange)
+                    if pair in markets.keys():
+                        price_base = exchange.fetch_ohlcv(pair, '1m', **kwargs)[-1][4]
+                    else:
+                        if symbol == base:  # base currency
+                            price_base = 1.0  # Assuming stable coins are maintaining peg
 
-    return df_wallet
+                        elif f'{base}/{symbol}' in markets.keys():
+                            price_base = 1.0 / exchange.fetch_ohlcv(f'{base}/{symbol}', '1m')[-1][4]
 
+                        elif symbol.startswith('LD'):  # binance earn
+                            if f"{symbol.replace('LD', '')}" == base:  # LDUSDT
+                                price_base = 1.0
+                            elif f"{symbol.replace('LD', '')}/{base}" in markets.keys():  # LDBTC
+                                price_base = exchange.fetch_ohlcv(f"{symbol.replace('LD', '')}/{base}", '1m')[-1][4]
+                            else:
+                                raise ValueError(f'pair={pair} does not exist in exchange={exch}')
 
-def get_cefi_portfolio(exch_list, exch_secrets):
-    df_wallet = fetch_balances(exch_list, exch_secrets)
+                        else:
+                            raise ValueError(f'pair={pair} does not exist in exchange={exch}')
 
-    symbols = set(df_wallet['symbol'])
-    df_prices = fetch_market_prices(symbols)
+                    # get price_usd
+                    if base in ('USD', 'USDT'):
+                        price_usd = price_base
+                    elif base in ('JPY'):
+                        price_usd = price_base / fetch_price_usdjpy()
+                    else:
+                        raise ValueError(f'base={base} cannot be converted to USD')
 
-    # add price info to df
-    df_wallet = pd.merge(df_wallet, df_prices, how='left', on='symbol')
-    df_wallet['USD'] = df_wallet['amount'] * df_wallet['price_usd']
+                    # convert into dataframe
+                    data.append({
+                        'exchange': exch, 
+                        'market': market, 
+                        'symbol': symbol, 
+                        'amount': amount, 
+                        'price_usd': price_usd,
+                        'USD': amount * price_usd,
+                        'JPY': amount * price_usd * fetch_price_usdjpy()
+                        })
 
+    df_wallet = pd.DataFrame.from_dict(data) \
+        .astype({
+            'exchange': str, 
+            'market': str, 
+            'symbol': str, 
+            'amount': float, 
+            'price_usd': float, 
+            'USD': float,
+            'JPY': float
+            })
+    
     return df_wallet
 
 
@@ -244,6 +240,7 @@ def write_to_influxdb(timestamp, df_wallet_defi, df_position_defi, df_wallet_cef
         tags = {
             'location': 'cefi',
             'exchange': row['exchange'], 
+            'market': row['market'], 
             'symbol': row['symbol']
             }
         fields = {
@@ -319,7 +316,7 @@ def write_to_influxdb(timestamp, df_wallet_defi, df_position_defi, df_wallet_cef
             )
 
 
-def main(exch_list, exch_secrets, url, headless, chromedriver_path, os_default_download_path, data_store_path, influxdb_config):
+def main(exch_config, exch_secrets, url, headless, chromedriver_path, os_default_download_path, data_store_path, influxdb_config):
     timestamp = int(time.time() * 1000)
 
     logger = getLogger('main')
@@ -327,7 +324,7 @@ def main(exch_list, exch_secrets, url, headless, chromedriver_path, os_default_d
 
     try:
         # get portfolio data as dataframe
-        df_wallet_cefi = get_cefi_portfolio(exch_list, exch_secrets)
+        df_wallet_cefi = get_cefi_portfolio(exch_config, exch_secrets)
         logger.debug('finished get_cefi_portfolio')
 
         df_wallet_defi, df_position_defi = get_defi_portfolio(url, headless, chromedriver_path, os_default_download_path, data_store_path)
@@ -357,7 +354,7 @@ if __name__ == '__main__':
     with open('../config/config.json') as f:
         config = json.load(f)
     
-    exch_list = config['exch_list']
+    exch_config = config['exch_config']
     url = config['ApeBoard_DashboardUrl']
     headless = config['headless']
     os_default_download_path = config['os_default_download_path']  # default dl directory to search csv
@@ -400,7 +397,7 @@ if __name__ == '__main__':
     }
 
     kwargs = {
-        'exch_list': exch_list,
+        'exch_config': exch_config,
         'exch_secrets': exch_secrets,
         'url': url, 
         'headless': headless, 

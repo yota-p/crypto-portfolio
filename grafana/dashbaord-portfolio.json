@@ -87,7 +87,7 @@
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
   "id": null,
-  "iteration": 1656345206949,
+  "iteration": 1656374765488,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -953,14 +953,16 @@
           "custom": {
             "align": "auto",
             "displayMode": "auto",
-            "filterable": true
+            "filterable": true,
+            "inspect": false
           },
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
-                "color": "green"
+                "color": "green",
+                "value": null
               }
             ]
           }
@@ -997,14 +999,14 @@
         "showHeader": true,
         "sortBy": []
       },
-      "pluginVersion": "8.3.4",
+      "pluginVersion": "9.0.1",
       "targets": [
         {
           "datasource": {
             "type": "influxdb",
             "uid": "${DS_MANAGEMENT/INFLUXDB}"
           },
-          "query": "SELECT last(amount) as amount, last(USD) as USD, last(JPY) as JPY from (\nSELECT sum(amount) as amount, sum(USD) as USD, sum(JPY) as JPY FROM portfolio.infinite.portfolio\nWHERE $timeFilter\nGROUP BY TIME(10s)\n) \nWHERE time > now() - 1h\nGROUP BY location, exchange, type, chain, symbol",
+          "query": "SELECT last(amount) as amount, last(USD) as USD, last(JPY) as JPY from (\nSELECT sum(amount) as amount, sum(USD) as USD, sum(JPY) as JPY FROM portfolio.infinite.portfolio\nWHERE $timeFilter\nGROUP BY TIME(10s)\n) \nWHERE time > now() - 1h\nGROUP BY location, exchange, market, type, chain, symbol",
           "rawQuery": true,
           "refId": "A",
           "resultFormat": "table"
@@ -1019,15 +1021,16 @@
               "Time": true
             },
             "indexByName": {
-              "JPY": 8,
+              "JPY": 9,
               "Time": 0,
-              "USD": 7,
-              "amount": 6,
-              "chain": 4,
+              "USD": 8,
+              "amount": 7,
+              "chain": 5,
               "exchange": 2,
               "location": 1,
-              "symbol": 5,
-              "type": 3
+              "market": 3,
+              "symbol": 6,
+              "type": 4
             },
             "renameByName": {
               "Time": "",
@@ -1070,11 +1073,11 @@
     ]
   },
   "time": {
-    "from": "now-7d",
+    "from": "now-30d",
     "to": "now"
   },
   "timepicker": {},
-  "timezone": "",
+  "timezone": "utc",
   "title": "Portfolio New",
   "uid": "O-qmFws7y",
   "version": 1,
