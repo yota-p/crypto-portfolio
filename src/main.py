@@ -235,6 +235,8 @@ def get_defi_portfolio(url, headless, chromedriver_path, os_default_download_pat
 
 
 def write_to_influxdb(timestamp, df_wallet_defi, df_position_defi, df_wallet_cefi, influxdb_config):
+    measurement_name = 'portfolio'
+
     # cefi wallet
     for index, row in df_wallet_cefi.iterrows():
         tags = {
@@ -253,8 +255,8 @@ def write_to_influxdb(timestamp, df_wallet_defi, df_position_defi, df_wallet_cef
         write_influxdb(
             write_api=influxdb_config['write_api'], 
             write_precision=influxdb_config['write_precision'], 
-            bucket='portfolio', 
-            measurement_name='portfolio', 
+            bucket=influxdb_config['bucket'], 
+            measurement_name=measurement_name, 
             fields=fields, 
             tags=tags, 
             timestamp=timestamp
@@ -279,8 +281,8 @@ def write_to_influxdb(timestamp, df_wallet_defi, df_position_defi, df_wallet_cef
         write_influxdb(
             write_api=influxdb_config['write_api'], 
             write_precision=influxdb_config['write_precision'], 
-            bucket='portfolio', 
-            measurement_name='portfolio', 
+            bucket=influxdb_config['bucket'], 
+            measurement_name=measurement_name, 
             fields=fields, 
             tags=tags, 
             timestamp=timestamp
@@ -308,8 +310,8 @@ def write_to_influxdb(timestamp, df_wallet_defi, df_position_defi, df_wallet_cef
         write_influxdb(
             write_api=influxdb_config['write_api'], 
             write_precision=influxdb_config['write_precision'], 
-            bucket='portfolio', 
-            measurement_name='portfolio', 
+            bucket=influxdb_config['bucket'], 
+            measurement_name=measurement_name, 
             fields=fields, 
             tags=tags, 
             timestamp=timestamp
@@ -366,20 +368,21 @@ if __name__ == '__main__':
     exch_secrets = get_secret(exchange_secret_name)
 
     # Execution parameter
-    exec_name = datetime.datetime.now(tz.gettz('UTC')).strftime('%Y%m%d-%H%M%S')  # YYYYMMDD-HHMMSS
+    root_name = 'crypto-portfolio'
     env = 'dev' if debug else 'prd'
+    bot_name = pathlib.Path(__file__).stem
+    exec_name = datetime.datetime.now(tz.gettz('UTC')).strftime('%Y%m%d-%H%M%S')  # YYYYMMDD-HHMMSS
+    hostname = socket.gethostname()
 
     # Logger
     # for cloudwatch
-    hostname = socket.gethostname()
-    file_name = pathlib.Path(__file__).stem
-    log_group_name = f'crypto-portfolio/{env}'
-    log_stream_name = f'{hostname}/{file_name}/{exec_name}'
+    log_group_name = f'{root_name}/{env}'
+    log_stream_name = f'{bot_name}/{exec_name}'
 
     logger = create_logger(
         name='main',
         cloudwatchconfig={'log_group_name': log_group_name, 'log_stream_name': log_stream_name, 'region_name': 'us-east-2'},
-        logrecord_constants={'hostname': hostname, 'env': env, 'exec_name': exec_name}
+        logrecord_constants={'env': env, 'exec_name': exec_name, 'hostname': hostname}
         )
     logger.info('created logger')
 
@@ -393,7 +396,8 @@ if __name__ == '__main__':
     write_api = idb_client.write_api(write_options=influxdb_client.client.write_api.SYNCHRONOUS)
     influxdb_config = {
         'write_api': write_api,
-        'write_precision': influxdb_client.domain.write_precision.WritePrecision.MS
+        'write_precision': influxdb_client.domain.write_precision.WritePrecision.MS,
+        'bucket': 'portfolio'
     }
 
     kwargs = {
