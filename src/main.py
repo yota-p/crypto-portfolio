@@ -368,7 +368,7 @@ if __name__ == '__main__':
     exch_secrets = get_secret(exchange_secret_name)
 
     # Execution parameter
-    root_name = 'crypto-portfolio'
+    bot_group = 'portfolio'
     env = 'dev' if debug else 'prd'
     bot_name = pathlib.Path(__file__).stem
     exec_name = datetime.datetime.now(tz.gettz('UTC')).strftime('%Y%m%d-%H%M%S')  # YYYYMMDD-HHMMSS
@@ -376,7 +376,7 @@ if __name__ == '__main__':
 
     # Logger
     # for cloudwatch
-    log_group_name = f'{root_name}/{env}'
+    log_group_name = f'{bot_group}/{env}'
     log_stream_name = f'{bot_name}/{exec_name}'
 
     logger = create_logger(
@@ -387,6 +387,7 @@ if __name__ == '__main__':
     logger.info('created logger')
 
     # InfluxDB
+    bucket = bot_group
     influxdb_secrets = get_secret(influxdb_secret_name)
     idb_client = influxdb_client.InfluxDBClient(
         url=influxdb_secrets['endpoint'],
@@ -397,7 +398,7 @@ if __name__ == '__main__':
     influxdb_config = {
         'write_api': write_api,
         'write_precision': influxdb_client.domain.write_precision.WritePrecision.MS,
-        'bucket': 'portfolio'
+        'bucket': bucket
     }
 
     kwargs = {
