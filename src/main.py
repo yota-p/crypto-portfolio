@@ -20,25 +20,11 @@ import influxdb_client
 from util.secretsmanager import get_secret
 from util.mylog import create_logger
 from util.ccxt_extension import gmocoin
+from util.influxdb import write_influxdb
 
 # ccxt doesn't support gmocoin atm. use extension script from 3rd party
 # https://note.com/nickel_plating/n/nc6fb71417e7e
 ccxt.gmocoin = gmocoin
-
-
-##################################################################
-# Helper
-##################################################################
-
-def write_influxdb(write_api, write_precision, bucket, measurement_name, fields: list, tags={}, timestamp:int=None):
-    point = influxdb_client.Point(measurement_name=measurement_name)
-    if timestamp:
-        point.time(timestamp, write_precision)
-    for k, v in tags.items():
-        point.tag(k, v)
-    for k, v in fields.items(): 
-        point.field(k, v)
-    write_api.write(bucket=bucket, record=point)
 
 
 def create_screenshot(driver, prefix):
