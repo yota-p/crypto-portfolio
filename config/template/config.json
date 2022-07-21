@@ -1,33 +1,39 @@
 {
     "exch_config": {
         "gmocoin": {
+            "accounts": ["main"],
             "markets": ["spot"],
             "rate_limit": 100,
             "base": "JPY"
         },
         "bitbank": {
+            "accounts": ["main"],
             "markets": ["spot"],
             "rate_limit": 100,
             "base": "JPY"
         },
         "coincheck": {
+            "accounts": ["main"],
             "markets": ["spot"],
             "rate_limit": 100,
             "base": "JPY"
         }, 
         "bybit": {
+            "accounts": ["main"],
             "markets": ["spot", "future"],
             "note": "swap, option seems to return same data as future. tbd",
             "rate_limit": 100,
             "base": "USDT"
         }, 
         "ftx": {
+            "accounts": ["main", "subaccount_name1", "subaccount_name2"],
             "markets": ["spot"],
             "note": "future is included in spot",
             "rate_limit": 100,
             "base": "USD"
         }, 
         "binance": {
+            "accounts": ["main"],
             "markets": ["spot", "margin", "future", "delivery"],
             "note": "spot includes binance earn. delivery=option.",
             "rate_limit": 100,

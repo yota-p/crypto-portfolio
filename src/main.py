@@ -62,66 +62,76 @@ def get_cefi_portfolio(exch_config, exch_secrets):
 
         base = param['base']  # base currency for the exchange
 
-        for market in param['markets']:
-            exchange = getattr(ccxt, exch)({
-                'apiKey': exch_secrets[exch]['API_KEY'],
-                'secret': exch_secrets[exch]['SECRET_KEY'],
-                'enableRateLimit': True,
-                'rate_limit': param['rate_limit'],
-                'options': {'defaultType': market}
-                })
-            markets = exchange.load_markets()
-            response = exchange.fetchBalance()
+        for account in param['accounts']:
+            # for ftx subaccounts
+            if exch == 'ftx' and account != 'main':
+                kwargs = {'headers': {'FTX-SUBACCOUNT': account}}
+            else:
+                kwargs = {}
 
-            for symbol, amount in response['total'].items():
-                if amount != 0.0:
-                    pair = f'{symbol}/{base}'
-                    kwargs = {}
-                    kwargs['since'] = int(time.time() * 1000) - 5 * 60 * 1000  # fetch last 5 min
+            for market in param['markets']:
+                exchange = getattr(ccxt, exch)({
+                    'apiKey': exch_secrets[exch]['API_KEY'],
+                    'secret': exch_secrets[exch]['SECRET_KEY'],
+                    'enableRateLimit': True,
+                    'rate_limit': param['rate_limit'],
+                    'options': {'defaultType': market},
+                    **kwargs
+                    })
+                markets = exchange.load_markets()
+                response = exchange.fetchBalance()
 
-                    # get price_base (base currency depends on exchange)
-                    if pair in markets.keys():
-                        price_base = exchange.fetch_ohlcv(pair, '1m', **kwargs)[-1][4]
-                    else:
-                        if symbol == base:  # base currency
-                            price_base = 1.0  # Assuming stable coins are maintaining peg
+                for symbol, amount in response['total'].items():
+                    if amount != 0.0:
+                        pair = f'{symbol}/{base}'
+                        kwargs = {}
+                        kwargs['since'] = int(time.time() * 1000) - 5 * 60 * 1000  # fetch last 5 min
 
-                        elif f'{base}/{symbol}' in markets.keys():
-                            price_base = 1.0 / exchange.fetch_ohlcv(f'{base}/{symbol}', '1m')[-1][4]
+                        # get price_base (base currency depends on exchange)
+                        if pair in markets.keys():
+                            price_base = exchange.fetch_ohlcv(pair, '1m', **kwargs)[-1][4]
+                        else:
+                            if symbol == base:  # base currency
+                                price_base = 1.0  # Assuming stable coins are maintaining peg
 
-                        elif symbol.startswith('LD'):  # binance earn
-                            if f"{symbol.replace('LD', '')}" == base:  # LDUSDT
-                                price_base = 1.0
-                            elif f"{symbol.replace('LD', '')}/{base}" in markets.keys():  # LDBTC
-                                price_base = exchange.fetch_ohlcv(f"{symbol.replace('LD', '')}/{base}", '1m')[-1][4]
+                            elif f'{base}/{symbol}' in markets.keys():
+                                price_base = 1.0 / exchange.fetch_ohlcv(f'{base}/{symbol}', '1m')[-1][4]
+
+                            elif symbol.startswith('LD'):  # binance earn
+                                if f"{symbol.replace('LD', '')}" == base:  # LDUSDT
+                                    price_base = 1.0
+                                elif f"{symbol.replace('LD', '')}/{base}" in markets.keys():  # LDBTC
+                                    price_base = exchange.fetch_ohlcv(f"{symbol.replace('LD', '')}/{base}", '1m')[-1][4]
+                                else:
+                                    raise ValueError(f'pair={pair} does not exist in exchange={exch}')
+
                             else:
                                 raise ValueError(f'pair={pair} does not exist in exchange={exch}')
 
+                        # get price_usd
+                        if base in ('USD', 'USDT'):
+                            price_usd = price_base
+                        elif base in ('JPY'):
+                            price_usd = price_base / fetch_price_usdjpy()
                         else:
-                            raise ValueError(f'pair={pair} does not exist in exchange={exch}')
+                            raise ValueError(f'base={base} cannot be converted to USD')
 
-                    # get price_usd
-                    if base in ('USD', 'USDT'):
-                        price_usd = price_base
-                    elif base in ('JPY'):
-                        price_usd = price_base / fetch_price_usdjpy()
-                    else:
-                        raise ValueError(f'base={base} cannot be converted to USD')
-
-                    # convert into dataframe
-                    data.append({
-                        'exchange': exch, 
-                        'market': market, 
-                        'symbol': symbol, 
-                        'amount': amount, 
-                        'price_usd': price_usd,
-                        'USD': amount * price_usd,
-                        'JPY': amount * price_usd * fetch_price_usdjpy()
-                        })
+                        # convert into dataframe
+                        data.append({
+                            'exchange': exch, 
+                            'account': account,
+                            'market': market, 
+                            'symbol': symbol, 
+                            'amount': amount, 
+                            'price_usd': price_usd,
+                            'USD': amount * price_usd,
+                            'JPY': amount * price_usd * fetch_price_usdjpy()
+                            })
 
     df_wallet = pd.DataFrame.from_dict(data) \
         .astype({
             'exchange': str, 
+            'account': str,
             'market': str, 
             'symbol': str, 
             'amount': float, 
@@ -228,6 +238,7 @@ def write_to_influxdb(timestamp, df_wallet_defi, df_position_defi, df_wallet_cef
         tags = {
             'location': 'cefi',
             'exchange': row['exchange'], 
+            'account': row['account'],
             'market': row['market'], 
             'symbol': row['symbol']
             }
