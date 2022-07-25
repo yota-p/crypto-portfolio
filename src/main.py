@@ -108,6 +108,13 @@ def get_cefi_portfolio(exch_config, exch_secrets):
                             else:
                                 raise ValueError(f'pair={pair} does not exist in exchange={exch}')
 
+                        # bitflyer FX/future
+                        if exch == 'bitflyer' and market == 'future':
+                            res = exchange.private_get_getcollateral()
+                            symbol = 'jpy'
+                            amount = float(res['collateral']) + float(res['open_position_pnl'])
+                            price_base = 1.0
+
                         # get price_usd
                         if base in ('USD', 'USDT'):
                             price_usd = price_base
